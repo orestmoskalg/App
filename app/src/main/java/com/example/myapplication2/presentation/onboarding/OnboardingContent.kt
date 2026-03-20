@@ -45,7 +45,7 @@ object OnboardingContent {
         "niche_selector" to "Tip: Narrow events with niche chips on the calendar. Profile niches define the default scope.",
         "event_confidence" to "Use confidence labels and links to judge how much to rely on a given date.",
         "export" to "Use Share or Add to calendar on an event card for handoff to your team.",
-        "glossary" to "New to a term? Search the Glossary tab for short definitions.",
+        "glossary" to "New to a term? Open Regulatory Glossary from Settings, Profile, or the Dashboard quick action.",
         "data_transparency" to "Only your selected niches and jurisdiction context are sent to the AI for generation.",
         "standing_rules" to "Standing requirements are ongoing obligations — not tied to a single calendar date.",
         "user_notes" to "Notes are stored on-device (Room) and tied to events.",

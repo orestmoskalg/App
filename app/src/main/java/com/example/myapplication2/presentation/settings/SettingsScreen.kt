@@ -33,6 +33,7 @@ import com.example.myapplication2.core.common.CountryRegulatoryContext
 import com.example.myapplication2.core.common.NicheCatalog
 import com.example.myapplication2.core.common.RegulatoryOfflineIndex
 import com.example.myapplication2.core.common.SectorCatalog
+import com.example.myapplication2.BuildConfig
 import com.example.myapplication2.MainActivity
 import com.example.myapplication2.di.AppContainer
 import com.example.myapplication2.domain.model.UserProfile
@@ -571,8 +572,11 @@ fun MainSettingsScreen(
                     AboutRow(Icons.Filled.AutoAwesome,  "AI Engine",                "OpenAI GPT-4o-mini")
                     AboutRow(Icons.Filled.Language,     "UI language",              "English")
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                    Text("v2.1 • Regulatory Assistant", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "Version ${BuildConfig.VERSION_NAME} · V2 (unified engine)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
