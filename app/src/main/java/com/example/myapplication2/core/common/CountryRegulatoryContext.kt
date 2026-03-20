@@ -88,6 +88,18 @@ object CountryRegulatoryContext {
             }
         }
 
+    /**
+     * Stable key for bundled offline link indices ([RegulatoryOfflineIndex]).
+     * Matches routing in [forCountry]: EU Member States without a dedicated profile use `"eu"`.
+     */
+    fun regulatoryCountryBucket(country: String): String {
+        if (country.isBlank()) return "eu"
+        return when (val n = normalizeCountry(country)) {
+            "usa", "ukraine", "poland", "germany", "france", "finland", "netherlands", "other" -> n
+            else -> "eu"
+        }
+    }
+
     fun forCountry(country: String): Context {
         if (country.isBlank()) return euContext()
         return when (normalizeCountry(country)) {
@@ -290,17 +302,19 @@ object CountryRegulatoryContext {
 
     /**
      * Knowledge Base: card must belong to the user's regulatory [UserProfile.sector].
-     * Unmapped / legacy niche strings are treated as medical-device content for backward compatibility.
-     * Cards with niche "General" are treated as medical-device seed content.
+     * Broad / empty / "General" niches are not tied to one sector — they pass this filter
+     * (jurisdiction + niche-chip filters still apply).
+     * Unmapped strings fall back to medical-only for backward compatibility with legacy seeds.
      */
     fun knowledgeSectorMatches(card: DashboardCard, profile: UserProfile): Boolean {
         val profileSector = profile.sector.ifBlank { SectorCatalog.DEFAULT_KEY }
         val n = card.niche.trim()
         if (n.isEmpty() || n.equals("General", ignoreCase = true)) {
-            return profileSector == SectorKeys.MEDICAL_DEVICES
+            return true
         }
         val nicheEntry = NicheCatalog.findByKeyOrName(n)
             ?: NicheCatalog.findByPromptKey(n)
+            ?: NicheCatalog.findByKeyOrNameIgnoreCase(n)
         if (nicheEntry == null) {
             return profileSector == SectorKeys.MEDICAL_DEVICES
         }
@@ -308,7 +322,8 @@ object CountryRegulatoryContext {
     }
 
     /**
-     * Selected niche chip: [selectedNicheKey] null = "General" — show cards for any profile niche or General.
+     * Selected niche chip: [selectedNicheKey] null = all profile niches (+ General) — see [matchesProfileNiches].
+     * When a specific tag is selected, only that canonical prompt key matches (no extra "General" rows).
      */
     fun knowledgeNicheMatches(
         card: DashboardCard,
@@ -316,9 +331,9 @@ object CountryRegulatoryContext {
         selectedNicheKey: String?,
     ): Boolean {
         if (selectedNicheKey == null) return matchesProfileNiches(card, profile)
-        val sel = NicheCatalog.findByKeyOrName(selectedNicheKey)?.promptKey ?: selectedNicheKey.trim()
-        val cardPk = NicheCatalog.findByKeyOrName(card.niche)?.promptKey ?: card.niche.trim()
-        return sel.equals(cardPk, ignoreCase = true) ||
-            card.niche.trim().equals("General", ignoreCase = true)
+        val sel = NicheCatalog.resolvePromptKey(selectedNicheKey)
+        val cardPk = NicheCatalog.resolvePromptKey(card.niche)
+        if (sel.isBlank()) return matchesProfileNiches(card, profile)
+        return sel.equals(cardPk, ignoreCase = true)
     }
 }

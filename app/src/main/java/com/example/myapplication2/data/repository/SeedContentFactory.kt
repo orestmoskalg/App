@@ -10,70 +10,8 @@ import java.util.Calendar
 
 object SeedContentFactory {
 
-    const val MIN_KNOWLEDGE_ITEMS = 20
-
     /** Increment when default KB seed content changes; app clears insight/strategy/learning once and re-seeds. */
-    const val KNOWLEDGE_SEED_VERSION = 1
-
-    fun ensureMinimumKnowledgeItems(
-        items: List<DashboardCard>,
-        niches: List<String>,
-        jurisdictionKey: String,
-        padding: (Int, List<String>, String) -> List<DashboardCard>,
-    ): List<DashboardCard> {
-        if (items.size >= MIN_KNOWLEDGE_ITEMS) return items
-        return items + padding(MIN_KNOWLEDGE_ITEMS - items.size, niches, jurisdictionKey)
-    }
-
-    fun syntheticInsightPadding(count: Int, niches: List<String>, jurisdictionKey: String): List<DashboardCard> {
-        val nicheLabel = NicheCatalog.findByKeyOrName(niches.firstOrNull() ?: "")?.nameEn ?: niches.firstOrNull() ?: "General"
-        return (1..count).map { i ->
-            DashboardCard.create(
-                type = CardType.INSIGHT,
-                title = "Offline insight $i — $nicheLabel",
-                subtitle = "Placeholder • $jurisdictionKey",
-                body = "This item was added offline so your Knowledge Base reaches at least $MIN_KNOWLEDGE_ITEMS entries. Tap Refresh when online to generate full AI content for your jurisdiction and niche.",
-                niche = nicheLabel,
-                dateMillis = System.currentTimeMillis() - i * 86_400_000L,
-                priority = Priority.MEDIUM,
-                jurisdictionKey = jurisdictionKey,
-            )
-        }
-    }
-
-    fun syntheticStrategyPadding(count: Int, niches: List<String>, jurisdictionKey: String): List<DashboardCard> {
-        val nicheLabel = NicheCatalog.findByKeyOrName(niches.firstOrNull() ?: "")?.nameEn ?: niches.firstOrNull() ?: "General"
-        return (1..count).map { i ->
-            DashboardCard.create(
-                type = CardType.STRATEGY,
-                title = "Offline strategy $i — $nicheLabel",
-                subtitle = "Placeholder • $jurisdictionKey",
-                body = "Offline supplement. Refresh with network to generate 20 tailored strategies for $jurisdictionKey and your niche.",
-                niche = nicheLabel,
-                dateMillis = System.currentTimeMillis() - i * 86_400_000L,
-                priority = Priority.MEDIUM,
-                jurisdictionKey = jurisdictionKey,
-            )
-        }
-    }
-
-    fun syntheticLearningPadding(count: Int, niches: List<String>, jurisdictionKey: String): List<DashboardCard> {
-        val nicheLabel = NicheCatalog.findByKeyOrName(niches.firstOrNull() ?: "")?.nameEn ?: niches.firstOrNull() ?: "General"
-        return (1..count).map { i ->
-            DashboardCard.create(
-                type = CardType.LEARNING_MODULE,
-                title = "Offline module $i — $nicheLabel",
-                subtitle = "Placeholder • $jurisdictionKey",
-                body = "Offline supplement. Tap Refresh when online for a full curriculum for $jurisdictionKey and $nicheLabel.",
-                niche = nicheLabel,
-                dateMillis = System.currentTimeMillis() - i * 86_400_000L,
-                priority = Priority.MEDIUM,
-                jurisdictionKey = jurisdictionKey,
-                resources = listOf("Official regulatory sources for $jurisdictionKey"),
-                actionChecklist = listOf("Regenerate when online", "Review with RA team"),
-            )
-        }
-    }
+    const val KNOWLEDGE_SEED_VERSION = 2
 
     private fun nicheLabelForKnowledgeSeed(profile: UserProfile): String {
         val k = profile.niches.firstOrNull().orEmpty()
@@ -138,7 +76,7 @@ object SeedContentFactory {
                 jurisdictionKey = jk,
             ),
         )
-        return ensureMinimumKnowledgeItems(core, profile.niches, jurisdictionKey, ::syntheticInsightPadding)
+        return core
     }
 
     private fun nonMedicalStrategyCards(profile: UserProfile, jurisdictionKey: String): List<DashboardCard> {
@@ -184,7 +122,7 @@ object SeedContentFactory {
                 jurisdictionKey = jk,
             ),
         )
-        return ensureMinimumKnowledgeItems(core, profile.niches, jurisdictionKey, ::syntheticStrategyPadding)
+        return core
     }
 
     private fun nonMedicalLearningCards(profile: UserProfile, jurisdictionKey: String): List<DashboardCard> {
@@ -229,7 +167,7 @@ object SeedContentFactory {
                 jurisdictionKey = jk,
             ),
         )
-        return ensureMinimumKnowledgeItems(core, profile.niches, jurisdictionKey, ::syntheticLearningPadding)
+        return core
     }
 
     private fun absoluteDate(year: Int, month: Int, day: Int): Long =
@@ -491,7 +429,7 @@ object SeedContentFactory {
                 jurisdictionKey = jurisdictionKey,
             ),
         )
-        return ensureMinimumKnowledgeItems(core, niches, jurisdictionKey, ::syntheticInsightPadding)
+        return core
     }
 
     fun strategyCards(niches: List<String>, jurisdictionKey: String): List<DashboardCard> {
@@ -544,7 +482,7 @@ object SeedContentFactory {
                 jurisdictionKey = jurisdictionKey,
             ),
         )
-        return ensureMinimumKnowledgeItems(core, niches, jurisdictionKey, ::syntheticStrategyPadding)
+        return core
     }
 
     fun learningCards(niches: List<String>, jurisdictionKey: String): List<DashboardCard> {
@@ -591,6 +529,6 @@ object SeedContentFactory {
                 jurisdictionKey = jurisdictionKey,
             ),
         )
-        return ensureMinimumKnowledgeItems(core, niches, jurisdictionKey, ::syntheticLearningPadding)
+        return core
     }
 }

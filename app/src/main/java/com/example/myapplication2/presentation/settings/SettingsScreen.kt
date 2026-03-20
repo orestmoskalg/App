@@ -12,7 +12,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -27,18 +26,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication2.core.common.CountryRegulatoryContext
 import com.example.myapplication2.core.common.NicheCatalog
+import com.example.myapplication2.core.common.RegulatoryOfflineIndex
 import com.example.myapplication2.core.common.SectorCatalog
 import com.example.myapplication2.MainActivity
 import com.example.myapplication2.di.AppContainer
 import com.example.myapplication2.domain.model.UserProfile
+import com.example.myapplication2.ui.theme.AppDimens
 import com.example.myapplication2.ui.theme.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -227,6 +225,14 @@ fun MainSettingsScreen(
 
     // Must run every composition — never skip before branching (edit screen is separate composable).
     val context = LocalContext.current
+    val officialLinks = remember(profile?.country, profile?.sector, profile?.niches) {
+        RegulatoryOfflineIndex.mergedOfficialLinks(
+            context.applicationContext,
+            profile?.country ?: "",
+            profile?.sector?.ifBlank { SectorCatalog.DEFAULT_KEY } ?: SectorCatalog.DEFAULT_KEY,
+            profile?.niches.orEmpty(),
+        )
+    }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -348,7 +354,7 @@ fun MainSettingsScreen(
 
     LazyColumn(
         modifier       = Modifier.fillMaxSize().background(PureWhite),
-        contentPadding = PaddingValues(bottom = 100.dp),
+        contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset),
     ) {
 
         // ── Header ─────────────────────────────────────────────────
@@ -357,7 +363,7 @@ fun MainSettingsScreen(
                 Modifier.fillMaxWidth()
                     .background(PureWhite),
             ) {
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
+                Column(Modifier.padding(horizontal = AppDimens.heroBlockPadding, vertical = 24.dp)) {
                     Text(
                         "Settings",
                         style      = MaterialTheme.typography.headlineMedium,
@@ -516,14 +522,20 @@ fun MainSettingsScreen(
             val ctx = CountryRegulatoryContext.forCountry(profile?.country ?: "")
             SettingsSection("Official resources — ${ctx.jurisdictionName}", Icons.Filled.Link, PrimaryGreen) {
                 Column {
-                    ctx.quickLinks.forEachIndexed { i, (label, url) ->
+                    Text(
+                        "Bundled link index: country, sector, niche tags (${officialLinks.size} links)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    officialLinks.forEachIndexed { i, (label, url) ->
                         ListItem(
                             headlineContent = { Text(label) },
                             leadingContent  = { Icon(Icons.Filled.Link, null, tint = PrimaryGreen, modifier = Modifier.size(18.dp)) },
                             trailingContent = { Icon(Icons.Filled.OpenInNew, null, modifier = Modifier.size(14.dp)) },
                             modifier        = Modifier.clickable { runCatching { uriHandler.openUri(url) } },
                         )
-                        if (i < ctx.quickLinks.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
+                        if (i < officialLinks.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
                     }
                 }
             }

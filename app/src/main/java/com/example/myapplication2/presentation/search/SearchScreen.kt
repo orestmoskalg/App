@@ -41,6 +41,7 @@ import com.example.myapplication2.presentation.components.SearchHistoryModuleCar
 import com.example.myapplication2.presentation.components.SectionHeader
 import com.example.myapplication2.presentation.components.ShimmerBox
 import com.example.myapplication2.presentation.components.toReadableDate
+import com.example.myapplication2.ui.theme.AppDimens
 import com.example.myapplication2.ui.theme.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -240,15 +241,15 @@ fun SearchScreen(vm: SearchViewModel, onCardClick: (String) -> Unit) {
         val errMsg = vm.error
         if (!errMsg.isNullOrBlank()) {
             Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
                 shape = RoundedCornerShape(12.dp),
                 color = CrimsonRed.copy(alpha = 0.1f),
             ) {
-                Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.ErrorOutline, null, tint = CrimsonRed, modifier = Modifier.size(16.dp))
+                Row(Modifier.padding(AppDimens.cardInnerPadding), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.ErrorOutline, null, tint = CrimsonRed, modifier = Modifier.size(18.dp))
                     Text(errMsg, style = MaterialTheme.typography.bodySmall, color = CrimsonRed, modifier = Modifier.weight(1f))
-                    IconButton(onClick = vm::clearError, modifier = Modifier.size(20.dp)) {
-                        Icon(Icons.Filled.Close, null, modifier = Modifier.size(14.dp))
+                    IconButton(onClick = vm::clearError, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.Close, "Dismiss", modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -290,7 +291,7 @@ private fun SearchBarSection(
     jurisdictionName: String,
 ) {
     Surface(shape = RectangleShape, color = PureWhite, shadowElevation = 2.dp) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!hasResult) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Filled.AutoAwesome, null, tint = PrimaryGreen, modifier = Modifier.size(18.dp))
@@ -437,7 +438,7 @@ private fun ResearchResultView(
     Column(Modifier.fillMaxSize()) {
         ScrollableTabRow(
             selectedTabIndex = activeTab.coerceAtMost(tabs.lastIndex),
-            edgePadding = 16.dp,
+            edgePadding = AppDimens.screenPaddingHorizontal,
             containerColor = PureWhite,
             divider = { HorizontalDivider(color = BorderGreen.copy(alpha = 0.3f)) },
         ) {
@@ -460,7 +461,12 @@ private fun ResearchResultView(
 
         LazyColumn(
             modifier = Modifier.background(ContentBg),
-            contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 100.dp),
+            contentPadding = PaddingValues(
+                start = AppDimens.screenPaddingHorizontal,
+                top = 12.dp,
+                end = AppDimens.screenPaddingHorizontal,
+                bottom = AppDimens.contentBottomInset,
+            ),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item { ResearchHeader(research) }
@@ -490,12 +496,12 @@ private fun ResearchHeader(r: ResearchResult) {
         else -> RequiredRed
     }
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AppDimens.cardCornerRadius),
         color = CardBgWhite,
         border = BorderStroke(1.dp, BorderGreen.copy(alpha = 0.3f)),
         shadowElevation = 2.dp,
     ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(AppDimens.cardInnerPadding), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.Top) {
                 Column(Modifier.weight(1f).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("\"${r.query}\"", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -986,17 +992,17 @@ private fun SuggestionsAndHistory(
     onDeleteHistory: (String) -> Unit,
     onPin: (String, Boolean) -> Unit,
 ) {
-    LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+    LazyColumn(contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset)) {
         if (history.isNotEmpty()) {
             item {
-                SectionHeader("Previous research", "${history.size} saved", modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                SectionHeader("Previous research", "${history.size} saved", modifier = Modifier.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 12.dp))
             }
             items(history.take(3), key = { it.id }) { card ->
                 SearchHistoryModuleCard(
                     card = card,
                     onCardClick = { _ -> onHistoryClick(card) },
                     onPin = onPin,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
                     showManagementActions = true,
                     onOpenInNew = { onHistoryClick(card) },
                     onDelete = { onDeleteHistory(card.id) },
@@ -1016,7 +1022,7 @@ private fun QueryGroupSection(group: NicheQueryCatalog.QueryGroup, onQueryClick:
     var expanded by remember { mutableStateOf(true) }
     Column {
         Row(
-            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 10.dp),
             Arrangement.SpaceBetween, Alignment.CenterVertically,
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

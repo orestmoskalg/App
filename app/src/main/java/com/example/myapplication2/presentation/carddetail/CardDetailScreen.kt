@@ -28,6 +28,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication2.core.common.AppJson
 import com.example.myapplication2.core.model.*
+import com.example.myapplication2.data.local.entity.EventUserNoteEntity
 import com.example.myapplication2.di.AppContainer
 import com.example.myapplication2.presentation.components.*
 import com.example.myapplication2.ui.theme.*
@@ -69,6 +70,22 @@ private fun resolveSourceUrl(resource: String): String? {
 class CardDetailViewModel(cardId: String, private val container: AppContainer) : ViewModel() {
     val card: StateFlow<DashboardCard?> = container.observeCardUseCase(cardId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val eventNotesForCard: StateFlow<List<EventUserNoteEntity>> =
+        container.eventNotesRepository.observeForCard(cardId)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun saveEventNote(text: String) {
+        val c = card.value ?: return
+        if (text.isBlank()) return
+        viewModelScope.launch {
+            container.eventNotesRepository.addNote(c.id, c.title, text.trim())
+        }
+    }
+
+    fun deleteEventNote(noteId: String) = viewModelScope.launch {
+        container.eventNotesRepository.deleteNote(noteId)
+    }
 
     fun togglePin() {
         val c = card.value ?: return
@@ -220,6 +237,10 @@ fun CardDetailScreen(vm: CardDetailViewModel, onBack: () -> Unit) {
                         }
                     }
 
+                    if (c.type == CardType.REGULATORY_EVENT) {
+                        EventNotesSection(vm = vm)
+                    }
+
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text("Updated: ${c.dateMillis.toReadableDate()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -232,6 +253,49 @@ fun CardDetailScreen(vm: CardDetailViewModel, onBack: () -> Unit) {
             }
         }
     } ?: Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = PrimaryGreen) }
+}
+
+@Composable
+private fun EventNotesSection(vm: CardDetailViewModel) {
+    val notes by vm.eventNotesForCard.collectAsState()
+    var draft by remember { mutableStateOf("") }
+    DetailBox(Icons.Filled.StickyNote2, "My notes", PrimaryGreen) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (notes.isEmpty()) {
+                Text(
+                    "Notes appear here and on the Calendar → Notes tab.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            notes.forEach { n ->
+                Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(n.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { vm.deleteEventNote(n.id) }) {
+                            Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = ErrorRed)
+                        }
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                label = { Text("Note text") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+            )
+            Button(
+                onClick = { vm.saveEventNote(draft); draft = "" },
+                enabled = draft.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+            ) { Text("Save") }
+        }
+    }
 }
 
 // ── Research Result rendering ──────────────────────────────────────────────────

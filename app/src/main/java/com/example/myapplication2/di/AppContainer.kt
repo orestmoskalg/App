@@ -2,6 +2,7 @@ package com.example.myapplication2.di
 
 import android.content.Context
 import com.example.myapplication2.BuildConfig
+import com.example.myapplication2.core.config.RegulationConfigLoader
 import com.example.myapplication2.data.local.AppDatabase
 import com.example.myapplication2.data.remote.GrokApi
 import com.example.myapplication2.data.repository.*
@@ -20,9 +21,12 @@ class AppContainer(val context: Context) {
     val appSettingsRepository: AppSettingsRepository by lazy { AppSettingsRepositoryImpl(context) }
     val userProfileRepository: UserProfileRepository by lazy { UserProfileRepositoryImpl(context) }
 
-    // ── API instance — single shared instance, key updated when user saves ────
-    // Prefer OPENAI_API_KEY from secrets.properties (app calls OpenAI). Fallback to GROK_API_KEY.
-    // Key update is best-effort on next request. No blocking calls.
+    val eventNotesRepository by lazy { EventNotesRepository(db.eventUserNoteDao()) }
+
+    val regulationConfig by lazy { RegulationConfigLoader.load(appContext) }
+
+    // ── API instance — key only from build (secrets.properties → BuildConfig), not shown in UI ────
+    // Prefer OPENAI_API_KEY. Fallback GROK_API_KEY. For production, prefer a backend proxy instead of embedding keys.
     private val _grokApi: GrokApi by lazy {
         val openAiKey = runCatching { BuildConfig.OPENAI_API_KEY }.getOrDefault("").trim()
         val grokKey = runCatching { BuildConfig.GROK_API_KEY }.getOrDefault("").trim()

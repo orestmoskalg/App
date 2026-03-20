@@ -90,12 +90,12 @@ fun DashboardCardItem(
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AppDimens.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        border = BorderStroke(AppDimens.cardBorderWidth, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(AppDimens.cardInnerPadding)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -220,13 +220,13 @@ fun KnowledgeModuleCard(
     }
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(AppDimens.cardCornerRadius),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.15f)),
+        border = BorderStroke(AppDimens.cardBorderWidth, accentColor.copy(alpha = 0.15f)),
         modifier = modifier.fillMaxWidth().clickable { onCardClick(card.id) },
     ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(AppDimens.cardInnerPadding), verticalArrangement = Arrangement.spacedBy(AppDimens.sectionSpacing)) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -261,13 +261,13 @@ fun KnowledgeModuleCard(
                     }
                     IconButton(
                         onClick = { onPin(card.id, !card.isPinned) },
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier.size(40.dp),
                     ) {
                         Icon(
                             if (card.isPinned) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                            null,
+                            contentDescription = if (card.isPinned) "Unpin" else "Pin",
                             tint = if (card.isPinned) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
@@ -332,14 +332,14 @@ fun SearchHistoryModuleCard(
     }
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(AppDimens.cardCornerRadius),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.15f)),
+        border = BorderStroke(AppDimens.cardBorderWidth, accentColor.copy(alpha = 0.15f)),
         modifier = modifier.fillMaxWidth().clickable { onCardClick(card.id) },
     ) {
         Row(
-            Modifier.padding(14.dp),
+            Modifier.padding(AppDimens.cardInnerPadding),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -391,23 +391,23 @@ fun SearchHistoryModuleCard(
                 }
                 IconButton(
                     onClick = { onPin(card.id, !card.isPinned) },
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         if (card.isPinned) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                         contentDescription = if (card.isPinned) "Unpin" else "Pin",
                         tint = if (card.isPinned) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
                 if (showManagementActions && onOpenInNew != null) {
-                    IconButton(onClick = onOpenInNew, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.OpenInNew, null, tint = accentColor, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = onOpenInNew, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.OpenInNew, "Open", tint = accentColor, modifier = Modifier.size(18.dp))
                     }
                 }
                 if (showManagementActions && onDelete != null) {
-                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.DeleteOutline, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.DeleteOutline, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -440,11 +440,11 @@ fun RegulatoryEventModuleCard(
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(AppDimens.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = PureWhite),
         elevation = CardDefaults.cardElevation(2.dp),
     ) {
-        Row(Modifier.padding(14.dp)) {
+        Row(Modifier.padding(AppDimens.cardInnerPadding)) {
             Column(Modifier.width(54.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Surface(shape = RoundedCornerShape(10.dp), color = dateBg) {
                     Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -483,7 +483,7 @@ fun RegulatoryEventModuleCard(
                     textAlign = TextAlign.Center,
                 )
             }
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (isToday) {
                     Surface(shape = RoundedCornerShape(4.dp), color = AccentTealMain) {
@@ -541,12 +541,12 @@ fun RegulatoryEventModuleCard(
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (onPin != null) {
-                    IconButton(onClick = onPin, Modifier.size(24.dp)) {
+                    IconButton(onClick = onPin, Modifier.size(40.dp)) {
                         Icon(
                             if (card.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
-                            null,
+                            contentDescription = if (card.isPinned) "Unpin" else "Pin",
                             tint = if (card.isPinned) AccentTealMain else SecondaryTextMedium,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(18.dp),
                         )
                     }
                 }
@@ -606,10 +606,10 @@ fun PinnedDashboardCard(
 fun LoadingCard(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AppDimens.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(AppDimens.cardInnerPadding), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             ShimmerBox(Modifier.fillMaxWidth(0.4f).height(12.dp))
             ShimmerBox(Modifier.fillMaxWidth(0.85f).height(18.dp))
             ShimmerBox(Modifier.fillMaxWidth(0.6f).height(14.dp))
@@ -673,7 +673,7 @@ fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

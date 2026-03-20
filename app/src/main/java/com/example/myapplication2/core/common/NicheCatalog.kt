@@ -200,4 +200,17 @@ object NicheCatalog {
         val q = query.trim().lowercase()
         return all.filter { it.name.lowercase().contains(q) || it.nameEn.lowercase().contains(q) }
     }
+
+    /**
+     * Canonical [Niche.promptKey] for filters (calendar, knowledge chips).
+     * Empty / [General] → "" (treated as “no niche tag” when a specific chip is selected).
+     */
+    fun resolvePromptKey(raw: String): String {
+        val t = raw.trim()
+        if (t.isEmpty() || t.equals("General", ignoreCase = true)) return ""
+        return findByPromptKey(t)?.promptKey
+            ?: findByKeyOrName(t)?.promptKey
+            ?: findByKeyOrNameIgnoreCase(t)?.promptKey
+            ?: t
+    }
 }

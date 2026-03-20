@@ -154,15 +154,9 @@ Return JSON array of exactly 20 objects:
 }]"""
 
             val raw = api.chat(regulatorySystemPrompt(userProfile), prompt, maxTokens = 14_000)
-            val parsed = AppJson.parseToJsonElement(raw.cleanJsonArray()).jsonArray
+            AppJson.parseToJsonElement(raw.cleanJsonArray()).jsonArray
                 .mapNotNull { parseInsight(it, nicheFallbackForParse, ctx.jurisdictionKey) }
                 .filter { it.title.isNotBlank() && it.body.isNotBlank() }
-            SeedContentFactory.ensureMinimumKnowledgeItems(
-                parsed,
-                userProfile.niches,
-                ctx.jurisdictionKey,
-                SeedContentFactory::syntheticInsightPadding,
-            )
         } catch (_: Exception) {
             SeedContentFactory.insightCards(userProfile.niches, ctx.jurisdictionKey)
         }
@@ -232,15 +226,9 @@ Return JSON array of exactly 20 objects:
 }]"""
 
             val raw = api.chat(regulatorySystemPrompt(userProfile), prompt, maxTokens = 16_000)
-            val parsed = AppJson.parseToJsonElement(raw.cleanJsonArray()).jsonArray
+            AppJson.parseToJsonElement(raw.cleanJsonArray()).jsonArray
                 .mapNotNull { parseStrategy(it, nicheFallbackForParse, ctx.jurisdictionKey) }
                 .filter { it.title.isNotBlank() }
-            SeedContentFactory.ensureMinimumKnowledgeItems(
-                parsed,
-                nichesList,
-                ctx.jurisdictionKey,
-                SeedContentFactory::syntheticStrategyPadding,
-            )
         } catch (_: Exception) {
             SeedContentFactory.strategyCards(nichesList, ctx.jurisdictionKey)
         }
@@ -323,15 +311,9 @@ Return JSON array of exactly 20 objects:
 }]"""
 
             val raw = api.chat(regulatorySystemPrompt(userProfile), prompt, maxTokens = 14_000)
-            val parsed = AppJson.parseToJsonElement(raw.cleanJsonArray()).jsonArray
+            AppJson.parseToJsonElement(raw.cleanJsonArray()).jsonArray
                 .mapNotNull { parseLearning(it, nicheFallbackForParse, ctx.jurisdictionKey) }
                 .filter { it.title.isNotBlank() }
-            SeedContentFactory.ensureMinimumKnowledgeItems(
-                parsed,
-                userProfile.niches,
-                ctx.jurisdictionKey,
-                SeedContentFactory::syntheticLearningPadding,
-            )
         } catch (_: Exception) {
             SeedContentFactory.learningCards(userProfile.niches, ctx.jurisdictionKey)
         }
@@ -446,8 +428,9 @@ Each event MUST include "links": an array of 2 to 5 objects with real https URLs
                 .sortedBy { it.dateMillis }
 
             parsed.ifEmpty { SeedContentFactory.calendarCards(niches, ctx.jurisdictionKey) }
-        } catch (_: Exception) {
-            SeedContentFactory.calendarCards(niches, ctx.jurisdictionKey)
+        } catch (e: Exception) {
+            // Do not silently fall back: GenerateRegulatoryCalendarUseCase must skip clear/save on failure.
+            throw e
         }
     }
 

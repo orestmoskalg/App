@@ -1,0 +1,17 @@
+{
+  "version": "2.0",
+  "eventsPerNicheBatch": 40,
+  "maxNichesPerRequest": 3,
+  "apiTimeoutSeconds": 60,
+  "maxRetries": 3,
+  "cacheTTLMinutes": 120,
+  "countries": [
+    "EU", "UK", "USA", "Canada", "Australia", "Switzerland",
+    "Japan", "China", "Brazil", "India", "South Korea",
+    "Turkey", "UAE", "Singapore", "Mexico",
+    "International (WHO/UN/ISO/ICH)"
+  ],
+  "defaultDateRangeMonths": 12,
+  "positioningStatement": "Regulatory Radar — AI-powered horizon scanning. Always verify critical dates with official sources.",
+  "dataTransparencyVersion": "2.0"
+}

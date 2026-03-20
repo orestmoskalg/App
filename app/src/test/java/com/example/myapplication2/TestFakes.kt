@@ -81,9 +81,6 @@ internal class FakeAppSettingsRepository : AppSettingsRepository {
     override suspend fun setKnowledgeBaseSeedVersion(version: Int) = Unit
     override suspend fun isOnboardingCompleted(): Boolean = false
     override suspend fun setOnboardingCompleted(completed: Boolean) = Unit
-    override suspend fun getApiKeyPreview(): String = ""
-    override suspend fun saveApiKey(key: String) = Unit
-    override suspend fun getApiKey(): String = ""
     override suspend fun getChecklistStates(): Map<String, Boolean> = emptyMap()
     override suspend fun saveChecklistStates(states: Map<String, Boolean>) = Unit
     override suspend fun getNotificationsEnabled(): Boolean = true

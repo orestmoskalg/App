@@ -1,49 +1,56 @@
-# Regulation Calendar — SwiftUI Module (MDR/IVDR)
+# Regulation Assistant — SwiftUI (v3 / MDRAssistant v2.2)
 
-Повний модуль календаря для додатку Regulation у SwiftUI.
+Модуль iOS: календар подій, standing requirements, нотатки (SwiftData), глосарій, регіональні пакети, експорт у календар / ICS.
 
 ## Структура
 
 ```
 Regulation/
 ├── App/
-│   ├── RegulationApp.swift      # @main entry
-│   └── AppDelegate.swift        # BGTaskScheduler, щоденний апдейт
+│   ├── RegulationApp.swift       # @main, SwiftData, TabView (Calendar / Requirements / Notes / Glossary)
+│   └── AppDelegate.swift         # мінімальний (можна розширити BG tasks)
+├── Core/
+│   └── ConfigManager.swift       # RegulationConfig.json
+├── Resources/
+│   └── RegulationConfig.json     # Додай у Copy Bundle Resources у Xcode
 ├── Domain/
-│   └── Entities/
-│       ├── RegulatoryEvent.swift
-│       ├── Niche.swift
-│       └── CalendarDateRange.swift
+│   ├── Entities/
+│   │   ├── Niche.swift
+│   │   ├── RegulatoryEvent.swift
+│   │   └── StandingRequirement.swift
+│   └── Glossary/
+│       └── RegulatoryGlossary.swift
 ├── Data/
+│   ├── Models/
+│   │   └── UserNote.swift        # SwiftData @Model
 │   └── Services/
 │       ├── GrokApiService.swift
 │       ├── RegulatoryCalendarService.swift
-│       └── NotificationService.swift
-├── Presentation/
-│   ├── ViewModels/
-│   │   └── CalendarViewModel.swift
-│   └── Views/
-│       ├── CalendarView.swift
-│       ├── NicheSelectorSheet.swift
-│       ├── DateRangeSettingsView.swift
-│       └── EventDetailView.swift
-└── Info.plist
+│       ├── RegulatoryRepository.swift
+│       ├── NotificationService.swift
+│       ├── EventCacheManager.swift
+│       ├── EventExportService.swift
+│       └── RegionalPackManager.swift
+└── Presentation/
+    ├── ViewModels/
+    │   └── CalendarViewModel.swift
+    └── Onboarding/
+        └── OnboardingContent.swift
 ```
+
+## Вимоги
+
+- **iOS 17+** (SwiftData, `requestFullAccessToEvents` у EventExportService)
+- **Xcode 15+**
 
 ## Інтеграція в Xcode
 
-1. Створи новий iOS-проєкт або відкрий існуючий.
-2. Скопіюй папку `Regulation` в проєкт.
-3. Додай до target: усі `.swift` файли.
-4. У Info.plist додай `BGTaskSchedulerPermittedIdentifiers` і `UIBackgroundModes`.
-5. Установи змінну середовища `GROK_API_KEY` (або через Build Settings / xcconfig).
+1. Додай у target усі нові `.swift` з підпапок (`Core`, `Domain/Glossary`, `Data/Models`, тощо).
+2. **`RegulationConfig.json`** → у target **Copy Bundle Resources** (інакше `ConfigManager` використає fallback).
+3. **Ключ Grok (xAI):** змінна середовища `GROK_API_KEY` у схемі Run або **Info.plist** / xcconfig (не коміть ключ у репозиторій).
+4. У **Info.plist** за потреби: дозволи на сповіщення, календар (`NSCalendarsUsageDescription`), фонові задачі — за потреби.
 
-## Можливості
+## Що змінилось відносно старого модуля
 
-- **Вибір ніш**: до 5 ніш зі списку, sheet з чекбоксами.
-- **Період**: from_date / to_date, дефолт -1 рік … +3 роки.
-- **Grok API**: max_tokens=8192, temperature=0.0.
-- **Події**: 100–200+ подій, фільтрація за діапазоном.
-- **EventDetailView**: title, date, description, priority, source, officialLink, actionChecklist (відмітки), impact, regulationReference, effortEstimate, affectedClasses, status, resources.
-- **Кнопка «Додати в Google Calendar»**: відкриває calendar.google.com з заповненим event.
-- **Щоденний апдейт**: BGTaskScheduler, push при нових подіях.
+- Окремі екрани `CalendarView` / `NicheSelectorSheet` / `DateRangeSettingsView` / `EventDetailView` **прибрані** — UI зібраний у `RegulationApp.swift` (вкладки).
+- `CalendarDateRange.swift` видалено — діапазон дат у `CalendarViewModel` (`fromDate` / `toDate`).

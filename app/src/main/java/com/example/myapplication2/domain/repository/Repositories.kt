@@ -56,9 +56,6 @@ interface AppSettingsRepository {
     suspend fun setKnowledgeBaseSeedVersion(version: Int)
     suspend fun isOnboardingCompleted(): Boolean
     suspend fun setOnboardingCompleted(completed: Boolean)
-    suspend fun getApiKeyPreview(): String
-    suspend fun saveApiKey(key: String)
-    suspend fun getApiKey(): String
     // Checklist persistence
     suspend fun getChecklistStates(): Map<String, Boolean>
     suspend fun saveChecklistStates(states: Map<String, Boolean>)

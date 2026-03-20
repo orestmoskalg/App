@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,10 +26,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication2.core.common.CountryRegulatoryContext
 import com.example.myapplication2.core.common.NicheCatalog
+import com.example.myapplication2.core.common.RegulatoryOfflineIndex
 import com.example.myapplication2.core.common.SectorCatalog
 import com.example.myapplication2.di.AppContainer
 import com.example.myapplication2.domain.model.UserProfile
 import com.example.myapplication2.domain.repository.UserStats
+import com.example.myapplication2.ui.theme.AppDimens
 import com.example.myapplication2.ui.theme.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -159,10 +162,19 @@ private fun ProfileContent(
     onNavigateSettings:  () -> Unit,
 ) {
     val stats by vm.stats.collectAsState()
+    val context = LocalContext.current
+    val officialLinks = remember(profile?.country, profile?.sector, profile?.niches) {
+        RegulatoryOfflineIndex.mergedOfficialLinks(
+            context.applicationContext,
+            profile?.country ?: "",
+            profile?.sector?.ifBlank { SectorCatalog.DEFAULT_KEY } ?: SectorCatalog.DEFAULT_KEY,
+            profile?.niches.orEmpty(),
+        )
+    }
 
     LazyColumn(
         modifier       = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = 100.dp),
+        contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset),
     ) {
 
         // ── Hero header ──────────────────────────────────────────────────────
@@ -369,14 +381,20 @@ private fun ProfileContent(
             val linkCtx = CountryRegulatoryContext.forCountry(profile?.country ?: "")
             ProfileSection("Official resources — ${linkCtx.jurisdictionName}", Icons.Filled.Link, PrimaryGreen) {
                 Column {
-                    linkCtx.quickLinks.forEachIndexed { i, (label, url) ->
+                    Text(
+                        "Country, sector & niche tags (bundled index + your profile)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    officialLinks.forEachIndexed { i, (label, url) ->
                         ListItem(
                             headlineContent = { Text(label) },
                             leadingContent  = { Icon(Icons.Filled.Link, null, tint = PrimaryGreen, modifier = Modifier.size(18.dp)) },
                             trailingContent = { Icon(Icons.Filled.OpenInNew, null, modifier = Modifier.size(14.dp)) },
                             modifier = Modifier.clickable { runCatching { uriHandler.openUri(url) } },
                         )
-                        if (i < linkCtx.quickLinks.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                        if (i < officialLinks.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                     }
                 }
             }

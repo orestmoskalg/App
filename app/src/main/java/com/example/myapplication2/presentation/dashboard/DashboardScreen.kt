@@ -23,8 +23,8 @@ import com.example.myapplication2.core.model.CardType
 import com.example.myapplication2.core.model.DashboardCard
 import com.example.myapplication2.core.model.Priority
 import com.example.myapplication2.di.AppContainer
-import com.example.myapplication2.domain.model.GenerationType
 import com.example.myapplication2.core.common.SectorCatalog
+import com.example.myapplication2.domain.model.GenerationType
 import com.example.myapplication2.domain.model.UserProfile
 import com.example.myapplication2.presentation.components.*
 import com.example.myapplication2.ui.theme.*
@@ -41,11 +41,6 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
         container.observePinnedCardsUseCase()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val recentSearches: StateFlow<List<DashboardCard>> =
-        container.observeSearchHistoryUseCase()
-            .map { it.take(3) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
     val userProfile: StateFlow<UserProfile?> =
         container.observeUserProfileUseCase()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -56,7 +51,9 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
     init { viewModelScope.launch { refreshGenerationsCount() } }
 
     private suspend fun refreshGenerationsCount() {
-        generationsLeft = container.getRemainingGenerationsUseCase(GenerationType.SEARCH)
+        generationsLeft = GenerationType.entries.minOf { type ->
+            container.getRemainingGenerationsUseCase(type)
+        }
     }
 
     fun pinCard(cardId: String, pinned: Boolean) {
@@ -87,14 +84,13 @@ fun DashboardScreen(
     onNavigateChecklist: () -> Unit,
 ) {
     val pinnedCards by vm.pinnedCards.collectAsState()
-    val recentSearches by vm.recentSearches.collectAsState()
     val urgentToday by vm.urgentToday.collectAsState()
     val profile by vm.userProfile.collectAsState()
     val today = remember { SimpleDateFormat("d MMMM yyyy", Locale("uk")).format(Date()) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = 100.dp),
+        contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset),
     ) {
 
         // ── Hero Header ──
@@ -103,7 +99,7 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth()
                     .background(PureWhite),
             ) {
-                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.padding(horizontal = AppDimens.heroBlockPadding, vertical = AppDimens.screenPaddingVertical), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.Top) {
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -147,7 +143,7 @@ fun DashboardScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         GreenStatPill("${profile?.niches?.size ?: 0}", "niches", Modifier.weight(1f))
                         GreenStatPill("${pinnedCards.size}", "pinned", Modifier.weight(1f))
-                        GreenStatPill("${vm.generationsLeft}", "queries", Modifier.weight(1f))
+                        GreenStatPill("${vm.generationsLeft}", "min left", Modifier.weight(1f))
                     }
                 }
             }
@@ -157,10 +153,10 @@ fun DashboardScreen(
         item {
             Surface(
                 onClick = onNavigateSearch,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(AppDimens.cardCornerRadius),
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.5.dp, PrimaryGreen.copy(alpha = 0.3f)),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 12.dp),
             ) {
                 Row(
                     modifier = Modifier.padding(14.dp),
@@ -190,9 +186,9 @@ fun DashboardScreen(
                     shape = RoundedCornerShape(14.dp),
                     color = ErrorRed.copy(alpha = 0.09f),
                     border = BorderStroke(1.5.dp, ErrorRed.copy(alpha = 0.35f)),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
                 ) {
-                    Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.padding(AppDimens.cardInnerPadding), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(shape = CircleShape, color = ErrorRed.copy(0.2f)) {
                             Icon(Icons.Filled.Warning, null, tint = ErrorRed, modifier = Modifier.padding(8.dp).size(18.dp))
                         }
@@ -221,12 +217,12 @@ fun DashboardScreen(
                 "Quick actions",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
             )
         }
         item {
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
+                contentPadding = PaddingValues(horizontal = AppDimens.screenPaddingHorizontal),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 val actions = listOf(
@@ -263,7 +259,7 @@ fun DashboardScreen(
                 SectionHeader(
                     title = "Pinned",
                     subtitle = "${pinnedCards.size} cards",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 8.dp),
                 )
             }
             items(pinnedCards, key = { it.id }) { card ->
@@ -271,56 +267,20 @@ fun DashboardScreen(
                     card = card,
                     onCardClick = onCardClick,
                     onPin = { id, pinned -> vm.pinCard(id, pinned) },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
                 )
-            }
-        }
-
-        // ── Recent Searches ──
-        if (recentSearches.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    title = "Recent research",
-                    subtitle = "Your AI search",
-                    action = {
-                        TextButton(onClick = onNavigateSearch) {
-                            Text("More", color = PrimaryGreen)
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
-            items(recentSearches, key = { it.id }) { card ->
-                Surface(
-                    onClick = { onCardClick(card.id) },
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
-                ) {
-                    Row(Modifier.padding(12.dp), Arrangement.spacedBy(10.dp), Alignment.CenterVertically) {
-                        Surface(shape = CircleShape, color = PrimaryGreen.copy(alpha = 0.1f)) {
-                            Icon(Icons.Filled.AutoAwesome, null, tint = PrimaryGreen, modifier = Modifier.padding(6.dp).size(14.dp))
-                        }
-                        Column(Modifier.weight(1f)) {
-                            Text(card.searchQuery.ifBlank { card.title }, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                            Text(card.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                        }
-                        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                    }
-                }
             }
         }
 
         // ── Footer nudge ──
         item {
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(AppDimens.cardCornerRadius),
                 color = PrimaryGreen.copy(alpha = 0.07f),
                 border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.2f)),
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(AppDimens.screenPaddingHorizontal),
             ) {
-                Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(AppDimens.cardInnerPadding), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.TipsAndUpdates, null, tint = PrimaryGreen, modifier = Modifier.size(20.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text("Tip of the day", style = MaterialTheme.typography.labelLarge, color = PrimaryGreen, fontWeight = FontWeight.Bold)

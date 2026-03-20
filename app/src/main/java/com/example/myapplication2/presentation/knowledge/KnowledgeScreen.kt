@@ -19,11 +19,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication2.core.common.CountryRegulatoryContext
+import com.example.myapplication2.core.common.Niche
 import com.example.myapplication2.core.common.NicheCatalog
 import com.example.myapplication2.core.common.SectorCatalog
 import com.example.myapplication2.core.model.CardType
 import com.example.myapplication2.core.model.DashboardCard
-import com.example.myapplication2.data.repository.SeedContentFactory
 import com.example.myapplication2.di.AppContainer
 import com.example.myapplication2.domain.model.UserProfile
 import com.example.myapplication2.presentation.components.*
@@ -178,6 +178,24 @@ class KnowledgeViewModel(private val container: AppContainer) : ViewModel() {
 private val TAB_LABELS = listOf("Insights", "Strategy", "Learning")
 private val TAB_ICONS  = listOf(Icons.Filled.Insights, Icons.Filled.AutoGraph, Icons.Filled.School)
 
+/**
+ * Chips and filters must follow the **sector** and **niches** chosen in onboarding (1–5 prompt keys),
+ * not the global niche catalog.
+ */
+private fun nichesForKnowledgePicker(profile: UserProfile?): List<Niche> {
+    if (profile == null) return emptyList()
+    val sector = profile.sector.ifBlank { SectorCatalog.DEFAULT_KEY }
+    val resolved = profile.niches.mapNotNull { key ->
+        NicheCatalog.findByPromptKey(key) ?: NicheCatalog.findByKeyOrName(key)
+    }.distinctBy { it.promptKey }
+    val inSector = resolved.filter { it.sectorKey == sector }
+    return when {
+        inSector.isNotEmpty() -> inSector
+        resolved.isNotEmpty() -> resolved
+        else -> NicheCatalog.forSector(sector)
+    }
+}
+
 @Composable
 fun KnowledgeScreen(vm: KnowledgeViewModel, onCardClick: (String) -> Unit) {
     val insights   by vm.insights.collectAsState()
@@ -190,18 +208,33 @@ fun KnowledgeScreen(vm: KnowledgeViewModel, onCardClick: (String) -> Unit) {
 
     val jurisdictionLabel = CountryRegulatoryContext.forCountry(userProfile?.country ?: "").jurisdictionName
     val sectorLabel = SectorCatalog.labelOrKey(userProfile?.sector.orEmpty().ifBlank { SectorCatalog.DEFAULT_KEY })
+    val profileNiches = remember(userProfile) { nichesForKnowledgePicker(userProfile) }
+    val nicheSummaryLine = remember(profileNiches) {
+        profileNiches.joinToString(" · ") { it.nameEn }.ifBlank { "—" }
+    }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
         // ── Header ─────────────────────────────────────────────────
         Box(Modifier.fillMaxWidth().background(PureWhite)) {
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp)) {
+            Column(
+                Modifier.padding(
+                    start = AppDimens.headerPaddingHorizontal,
+                    end = AppDimens.headerPaddingHorizontal,
+                    top = AppDimens.headerPaddingTop,
+                    bottom = AppDimens.headerPaddingBottom,
+                ),
+            ) {
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                     Column {
                         Text("Knowledge Base", style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold, color = PrimaryTeal)
                         Text(
-                            "$jurisdictionLabel • $sectorLabel • ≥${SeedContentFactory.MIN_KNOWLEDGE_ITEMS} items per tab after Refresh (matches country, sector & niche)",
+                            "$jurisdictionLabel • $sectorLabel • $nicheSummaryLine",
+                            style = MaterialTheme.typography.bodySmall, color = TextMutedLight,
+                        )
+                        Text(
+                            "AI-generated; verify facts in primary sources. Refresh applies your country, sector & selected niche tags below.",
                             style = MaterialTheme.typography.bodySmall, color = TextMutedLight,
                         )
                     }
@@ -260,7 +293,7 @@ fun KnowledgeScreen(vm: KnowledgeViewModel, onCardClick: (String) -> Unit) {
                     color  = ErrorRed.copy(0.1f),
                     border = BorderStroke(1.dp, ErrorRed.copy(0.3f)),
                     shape  = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
                 ) {
                     Row(Modifier.padding(10.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text(msg, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
@@ -276,6 +309,7 @@ fun KnowledgeScreen(vm: KnowledgeViewModel, onCardClick: (String) -> Unit) {
         when (vm.activeTab) {
             0 -> InsightsTab(
                 cards         = insights,
+                pickerNiches  = profileNiches,
                 selectedNiche = selectedInsight,
                 isLoading     = vm.isLoading,
                 onSelectNiche = vm::loadInsights,
@@ -284,6 +318,7 @@ fun KnowledgeScreen(vm: KnowledgeViewModel, onCardClick: (String) -> Unit) {
             )
             1 -> StrategiesTab(
                 cards         = strategies,
+                pickerNiches  = profileNiches,
                 selectedNiche = selectedStrategy,
                 isLoading     = vm.isLoading,
                 onSelectNiche = vm::loadStrategies,
@@ -292,6 +327,7 @@ fun KnowledgeScreen(vm: KnowledgeViewModel, onCardClick: (String) -> Unit) {
             )
             2 -> LearningTab(
                 cards         = learning,
+                pickerNiches  = profileNiches,
                 selectedNiche = selectedLearning,
                 isLoading     = vm.isLoading,
                 onSelectNiche = vm::loadLearning,
@@ -309,6 +345,7 @@ fun KnowledgeScreen(vm: KnowledgeViewModel, onCardClick: (String) -> Unit) {
 @Composable
 private fun InsightsTab(
     cards: List<DashboardCard>,
+    pickerNiches: List<Niche>,
     selectedNiche: String?,
     isLoading: Boolean,
     onSelectNiche: (String?) -> Unit,
@@ -316,13 +353,14 @@ private fun InsightsTab(
     onPin: (String, Boolean) -> Unit,
 ) {
     LazyColumn(
-        contentPadding      = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding      = PaddingValues(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.listItemSpacing),
     ) {
         // Niche picker chips
         item {
             NichePicker(
-                label         = "Niche for insights:",
+                label         = "Niche for insights (your profile tags):",
+                niches        = pickerNiches,
                 selectedKey   = selectedNiche,
                 onSelectNiche = onSelectNiche,
             )
@@ -331,13 +369,15 @@ private fun InsightsTab(
         if (isLoading && cards.isEmpty()) {
             items(5) { ShimmerBox(Modifier.fillMaxWidth().height(120.dp).padding(horizontal = 4.dp)) }
         } else if (cards.isEmpty()) {
-            item { EmptyKnowledgeState("No insights", "Select a niche and tap Refresh", Icons.Filled.Insights) }
+            item { EmptyKnowledgeState("No insights", "Select a niche tag and tap Refresh", Icons.Filled.Insights) }
         } else {
             item {
-                Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
-                    Text("${cards.size} insights", style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                Text(
+                    "${cards.size} insights",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 2.dp),
+                )
             }
             items(cards, key = { it.id }) { card ->
                 KnowledgeModuleCard(card = card, accentColor = InfoBlue, onCardClick = onCardClick, onPin = onPin)
@@ -353,6 +393,7 @@ private fun InsightsTab(
 @Composable
 private fun StrategiesTab(
     cards: List<DashboardCard>,
+    pickerNiches: List<Niche>,
     selectedNiche: String?,
     isLoading: Boolean,
     onSelectNiche: (String?) -> Unit,
@@ -360,12 +401,13 @@ private fun StrategiesTab(
     onPin: (String, Boolean) -> Unit,
 ) {
     LazyColumn(
-        contentPadding      = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding      = PaddingValues(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.listItemSpacing),
     ) {
         item {
             NichePicker(
-                label         = "Niche for strategies:",
+                label         = "Niche for strategies (your profile tags):",
+                niches        = pickerNiches,
                 selectedKey   = selectedNiche,
                 onSelectNiche = onSelectNiche,
             )
@@ -377,10 +419,12 @@ private fun StrategiesTab(
             item { EmptyKnowledgeState("No strategies", "Select a niche and tap Refresh to generate", Icons.Filled.AutoGraph) }
         } else {
             item {
-                Text("${cards.size} strategies (mixed horizons)",
+                Text(
+                    "${cards.size} strategies (mixed horizons)",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                    modifier = Modifier.padding(vertical = 2.dp),
+                )
             }
             items(cards, key = { it.id }) { card ->
                 KnowledgeModuleCard(card = card, accentColor = WarningAmber, onCardClick = onCardClick, onPin = onPin)
@@ -396,6 +440,7 @@ private fun StrategiesTab(
 @Composable
 private fun LearningTab(
     cards: List<DashboardCard>,
+    pickerNiches: List<Niche>,
     selectedNiche: String?,
     isLoading: Boolean,
     onSelectNiche: (String?) -> Unit,
@@ -403,12 +448,13 @@ private fun LearningTab(
     onPin: (String, Boolean) -> Unit,
 ) {
     LazyColumn(
-        contentPadding      = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding      = PaddingValues(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.listItemSpacing),
     ) {
         item {
             NichePicker(
-                label         = "Niche for learning:",
+                label         = "Niche for learning (your profile tags):",
+                niches        = pickerNiches,
                 selectedKey   = selectedNiche,
                 onSelectNiche = onSelectNiche,
             )
@@ -420,10 +466,12 @@ private fun LearningTab(
             item { EmptyKnowledgeState("No modules", "Select a niche and tap Refresh", Icons.Filled.School) }
         } else {
             item {
-                Text("${cards.size} learning modules",
+                Text(
+                    "${cards.size} learning modules",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                    modifier = Modifier.padding(vertical = 2.dp),
+                )
             }
             items(cards, key = { it.id }) { card ->
                 KnowledgeModuleCard(card = card, accentColor = SuccessGreen, onCardClick = onCardClick, onPin = onPin)
@@ -439,30 +487,34 @@ private fun LearningTab(
 @Composable
 private fun NichePicker(
     label:         String,
+    niches:        List<Niche>,
     selectedKey:   String?,
     onSelectNiche: (String?) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(label, style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding        = PaddingValues(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.chipRowSpacing),
+            contentPadding        = PaddingValues(0.dp),
         ) {
-            // "All niches" chip
+            // All tags selected in the profile (any of your niches)
             item {
                 FilterChip(
                     selected = selectedKey == null,
                     onClick  = { onSelectNiche(null) },
-                    label    = { Text("🌍 General", style = MaterialTheme.typography.labelMedium) },
+                    label    = { Text("🌍 All my profile niches", style = MaterialTheme.typography.labelMedium) },
                     colors   = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = PrimaryGreen.copy(alpha = 0.2f),
                         selectedLabelColor     = PrimaryGreen,
                     ),
                 )
             }
-            items(NicheCatalog.all) { niche ->
+            items(niches, key = { it.promptKey }) { niche ->
                 FilterChip(
                     selected = selectedKey == niche.promptKey,
                     onClick  = { onSelectNiche(niche.promptKey) },

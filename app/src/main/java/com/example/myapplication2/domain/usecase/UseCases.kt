@@ -65,9 +65,7 @@ class ResearchUseCase(
     private val generationRepo: GenerationRepository,
 ) {
     suspend operator fun invoke(query: String, userProfile: UserProfile): ResearchResult {
-        // Single API call — research() caches result internally
         val result = researchRepo.research(query, userProfile)
-        // search() reuses the cache — no second API call
         runCatching {
             val card = researchRepo.search(query, userProfile)
             cardRepo.saveCard(card)

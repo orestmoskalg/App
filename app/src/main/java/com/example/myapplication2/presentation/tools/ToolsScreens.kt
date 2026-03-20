@@ -26,9 +26,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.myapplication2.core.common.CountryRegulatoryContext
+import com.example.myapplication2.core.common.RegulatoryOfflineIndex
 import com.example.myapplication2.core.common.SectorCatalog
 import com.example.myapplication2.core.common.SectorKeys
 import com.example.myapplication2.di.AppContainer
+import com.example.myapplication2.ui.theme.AppDimens
 import com.example.myapplication2.ui.theme.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -286,6 +288,7 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
     var expandedTerm by remember { mutableStateOf<String?>(null) }
     var country by remember { mutableStateOf("") }
     var sectorKey by remember { mutableStateOf(SectorCatalog.DEFAULT_KEY) }
+    var nicheKeys by remember { mutableStateOf<List<String>>(emptyList()) }
 
     LaunchedEffect(container) {
         runCatching {
@@ -293,6 +296,7 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
                 val p = container.userProfileRepository.getUserProfile()
                 country = p?.country ?: ""
                 sectorKey = p?.sector?.ifBlank { SectorCatalog.DEFAULT_KEY } ?: SectorCatalog.DEFAULT_KEY
+                nicheKeys = p?.niches.orEmpty()
             }
         }.getOrElse { }
     }
@@ -300,6 +304,11 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
     val glossary = remember(country, sectorKey) { getGlossaryForSectorAndCountry(sectorKey, country) }
     val ctx = remember(country) { CountryRegulatoryContext.forCountry(country) }
     val sectorLabel = remember(sectorKey) { SectorCatalog.labelOrKey(sectorKey) }
+    val officialLinks = remember(country, sectorKey, nicheKeys) {
+        RegulatoryOfflineIndex.mergedOfficialLinks(
+            container.appContext, country, sectorKey, nicheKeys,
+        )
+    }
 
     val filtered = remember(query, selectedCategory, glossary) {
         glossary.filter { term ->
@@ -319,7 +328,7 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
                 title = {
                     Column {
                         Text("Regulatory Glossary", fontWeight = FontWeight.Bold)
-                        Text("${ctx.jurisdictionName} • $sectorLabel • ${glossary.size} terms", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${ctx.jurisdictionName} • $sectorLabel • ${nicheKeys.size} niche tags • ${glossary.size} terms", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBackIosNew, "Back") } },
@@ -333,18 +342,18 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
 
             // Official resources for current country (all jurisdictions from Settings)
             Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
                 shape = RoundedCornerShape(12.dp),
                 color = PrimaryGreen.copy(alpha = 0.06f),
             ) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Official resources — ${ctx.jurisdictionName}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
+                Column(Modifier.padding(AppDimens.cardInnerPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Official resources — ${ctx.jurisdictionName} (${officialLinks.size} links)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         contentPadding = PaddingValues(vertical = 4.dp),
                     ) {
-                        items(ctx.quickLinks.size) { index ->
-                            val (label, url) = ctx.quickLinks[index]
+                        items(officialLinks.size) { index ->
+                            val (label, url) = officialLinks[index]
                             if (url.isNotBlank()) {
                                 SuggestionChip(
                                     onClick = { runCatching { uriHandler.openUri(url) } },
@@ -361,7 +370,7 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
             // Search bar
             OutlinedTextField(
                 value = query, onValueChange = { query = it },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
                 placeholder = { Text("Search term or abbreviation...") },
                 leadingIcon = { Icon(Icons.Filled.Search, null, tint = PrimaryGreen) },
                 trailingIcon = if (query.isNotBlank()) {
@@ -370,12 +379,12 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(AppDimens.cardCornerRadius),
             )
 
             // Category filter chips
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
@@ -403,7 +412,7 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
                     "Found: ${filtered.size}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
                 )
             }
 
@@ -418,13 +427,13 @@ fun GlossaryScreen(onBack: () -> Unit, container: AppContainer) {
                     }
                 }
             } else {
-                LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+                LazyColumn(contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset)) {
                     items(filtered, key = { it.abbreviation }) { term ->
                         GlossaryTermCard(
                             term = term,
                             expanded = expandedTerm == term.abbreviation,
                             onToggle = { expandedTerm = if (expandedTerm == term.abbreviation) null else term.abbreviation },
-                            defaultResourceLink = ctx.quickLinks.firstOrNull()?.takeIf { (_, url) -> url.isNotBlank() },
+                            defaultResourceLink = officialLinks.firstOrNull()?.takeIf { (_, url) -> url.isNotBlank() },
                         )
                     }
                 }
@@ -881,8 +890,8 @@ fun ComplianceChecklistScreen(
         Column(Modifier.fillMaxSize().padding(pad)) {
 
             // Progress bar
-            Surface(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing), RoundedCornerShape(AppDimens.cardCornerRadius), color = MaterialTheme.colorScheme.surfaceVariant) {
+                Column(Modifier.padding(AppDimens.cardInnerPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text("Overall progress", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                         Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = PrimaryGreen)
@@ -901,7 +910,7 @@ fun ComplianceChecklistScreen(
 
             // MDR device-class filter (medical sector only)
             if (sectorKey == SectorKeys.MEDICAL_DEVICES) {
-                LazyRow(contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyRow(contentPadding = PaddingValues(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(classes) { cls ->
                         FilterChip(
                             selected = classFilter == cls,
@@ -914,7 +923,7 @@ fun ComplianceChecklistScreen(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
             }
 
-            LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+            LazyColumn(contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset)) {
                 filteredSections.forEach { section ->
                     val sectionDone = section.items.count { checkStates[it.id] == true }
                     val sectionTotal = section.items.size
@@ -940,9 +949,9 @@ fun ComplianceChecklistScreen(
 
 @Composable
 private fun ChecklistSectionHeader(section: ChecklistSection, done: Int, total: Int, progress: Float) {
-    Surface(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp), RoundedCornerShape(12.dp),
+    Surface(Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing), RoundedCornerShape(12.dp),
         color = section.color.copy(alpha = 0.07f), border = BorderStroke(1.dp, section.color.copy(alpha = 0.2f))) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(AppDimens.cardInnerPadding), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                 Column {
                     Text(section.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = section.color)
@@ -964,7 +973,7 @@ private fun ChecklistSectionHeader(section: ChecklistSection, done: Int, total: 
 private fun ChecklistItemRow(item: ChecklistItem, checked: Boolean, color: Color, onToggle: () -> Unit) {
     var showHint by remember { mutableStateOf(false) }
     Surface(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp),
+        Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 2.dp),
         RoundedCornerShape(10.dp),
         color = if (checked) color.copy(alpha = 0.06f) else MaterialTheme.colorScheme.surfaceVariant,
     ) {

@@ -112,11 +112,13 @@ class GenerationRepositoryImpl(private val dao: GenerationLogDao) : GenerationRe
     }
 
     override suspend fun recordGeneration(type: GenerationType) {
-        dao.insert(GenerationLogEntity(
-            weekKey = WeekKeyHelper.currentWeekKey(),
-            generationType = type.name,
-            timestampMillis = System.currentTimeMillis(),
-        ))
+        dao.insert(
+            GenerationLogEntity(
+                weekKey = WeekKeyHelper.currentWeekKey(),
+                generationType = type.name,
+                timestampMillis = System.currentTimeMillis(),
+            ),
+        )
     }
 
     override suspend fun getRemainingGenerations(type: GenerationType, maxPerWeek: Int): Int {
@@ -136,7 +138,6 @@ class AppSettingsRepositoryImpl(private val context: Context) : AppSettingsRepos
     private val deadlineAlertsKey  = booleanPreferencesKey("notif_deadlines")
     private val weeklyDigestKey    = booleanPreferencesKey("notif_weekly")
     private val urgentOnlyKey      = booleanPreferencesKey("notif_urgent_only")
-    private val apiKeyKey          = stringPreferencesKey("api_key")
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -232,12 +233,6 @@ class AppSettingsRepositoryImpl(private val context: Context) : AppSettingsRepos
     override suspend fun setWeeklyDigestEnabled(v: Boolean) { writePref(weeklyDigestKey, v) }
     override suspend fun getUrgentOnlyEnabled(): Boolean  = readPref(urgentOnlyKey, false)
     override suspend fun setUrgentOnlyEnabled(v: Boolean) { writePref(urgentOnlyKey, v) }
-
-    // ── API Key ───────────────────────────────────────────────────────────────
-
-    override suspend fun getApiKeyPreview(): String = readPref(apiKeyKey, "")
-    override suspend fun getApiKey(): String         = readPref(apiKeyKey, "")
-    override suspend fun saveApiKey(key: String) { writePref(apiKeyKey, key) }
 
     override suspend fun resetSessionForOnboarding() {
         context.dataStore.edit { prefs ->

@@ -1,73 +1,192 @@
 import Foundation
 
-/// Подія регуляторного календаря MDR/IVDR
+// MARK: - RegulatoryEvent (v2.0)
+
+/// A single regulatory event with verification metadata.
+///
+/// **v2.0 changes (from UX feedback):**
+/// - `sourceURL`: official link for verification (Feedback: Henrik, Markus, Luisa — 9/10 users)
+/// - `confidence`: AI self-assessed confidence level (addresses hallucination fear)
+/// - `verificationHint`: tells user HOW to verify this event independently
+/// - `jurisdiction`: specific country/region for filtering (Feedback: James, Rachel, Chiara)
+/// - `recurringInfo`: supports recurring events like quarterly reports (Feedback: Chiara)
+/// - `relatedTerms`: links to glossary for juniors (Feedback: David)
 struct RegulatoryEvent: Identifiable, Codable, Hashable {
-    let id: UUID
-    var title: String
-    var date: Date
-    var description: String
-    var priority: EventPriority
-    var source: String
-    var officialLink: URL?
-    var actionChecklist: [String]
-    var impact: String
-    var regulationReference: String
-    var effortEstimate: String
-    var affectedClasses: [String]
-    var status: EventStatus
-    var resources: [URL]
-    var niche: String
+    let id: String
+    let title: String
+    let date: Date
+    let endDate: Date?
+    let eventType: EventType
+    let niche: String
+    let nicheCategory: String
+    let jurisdiction: Jurisdiction
+    let description: String
+    let impact: ImpactLevel
+    let confidence: ConfidenceLevel
+    let sourceURL: String?
+    let sourceAuthority: String?
+    let verificationHint: String?
+    let checklist: [String]
+    let risks: [String]
+    let crossNicheImpacts: [String]
+    let relatedTerms: [String]
+    let recurringInfo: RecurringInfo?
 
-    init(
-        id: UUID = UUID(),
-        title: String,
-        date: Date,
-        description: String,
-        priority: EventPriority = .medium,
-        source: String = "",
-        officialLink: URL? = nil,
-        actionChecklist: [String] = [],
-        impact: String = "",
-        regulationReference: String = "",
-        effortEstimate: String = "",
-        affectedClasses: [String] = [],
-        status: EventStatus = .upcoming,
-        resources: [URL] = [],
-        niche: String = ""
-    ) {
-        self.id = id
-        self.title = title
-        self.date = date
-        self.description = description
-        self.priority = priority
-        self.source = source
-        self.officialLink = officialLink
-        self.actionChecklist = actionChecklist
-        self.impact = impact
-        self.regulationReference = regulationReference
-        self.effortEstimate = effortEstimate
-        self.affectedClasses = affectedClasses
-        self.status = status
-        self.resources = resources
-        self.niche = niche
+    // MARK: - Event Type (universal across all niches)
+
+    enum EventType: String, Codable, CaseIterable {
+        case deadline = "deadline"
+        case conference = "conference"
+        case lawUpdate = "law_update"
+        case enforcement = "enforcement"
+        case consultation = "consultation"
+        case guidance = "guidance"
+        case transitionPeriod = "transition_period"
+        case reportingDue = "reporting_due"
+        case auditWindow = "audit_window"
+        case standardUpdate = "standard_update"
+        case marketSurveillance = "market_surveillance"
+        case other = "other"
+
+        var displayName: String {
+            switch self {
+            case .deadline: return "Compliance deadline"
+            case .conference: return "Conference"
+            case .lawUpdate: return "Law/regulation update"
+            case .enforcement: return "Enforcement action"
+            case .consultation: return "Public consultation"
+            case .guidance: return "Guidance published"
+            case .transitionPeriod: return "Transition period"
+            case .reportingDue: return "Reporting due"
+            case .auditWindow: return "Audit window"
+            case .standardUpdate: return "Standard update"
+            case .marketSurveillance: return "Market surveillance"
+            case .other: return "Other"
+            }
+        }
+
+        var iconName: String {
+            switch self {
+            case .deadline: return "exclamationmark.triangle.fill"
+            case .conference: return "person.3.fill"
+            case .lawUpdate: return "doc.text.fill"
+            case .enforcement: return "gavel.fill"
+            case .consultation: return "bubble.left.and.bubble.right.fill"
+            case .guidance: return "book.fill"
+            case .transitionPeriod: return "clock.fill"
+            case .reportingDue: return "doc.badge.clock.fill"
+            case .auditWindow: return "checkmark.shield.fill"
+            case .standardUpdate: return "arrow.triangle.2.circlepath"
+            case .marketSurveillance: return "magnifyingglass"
+            case .other: return "calendar"
+            }
+        }
     }
 
-    /// Днів до події
-    var daysLeft: Int {
-        Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+    // MARK: - Impact Level
+
+    enum ImpactLevel: String, Codable, CaseIterable {
+        case critical = "critical"
+        case high = "high"
+        case medium = "medium"
+        case low = "low"
+
+        var displayName: String { rawValue.capitalized }
+
+        var colorName: String {
+            switch self {
+            case .critical: return "red"
+            case .high: return "orange"
+            case .medium: return "yellow"
+            case .low: return "green"
+            }
+        }
+
+        var sortOrder: Int {
+            switch self {
+            case .critical: return 0
+            case .high: return 1
+            case .medium: return 2
+            case .low: return 3
+            }
+        }
     }
 
-    var isUrgent: Bool { daysLeft >= 0 && daysLeft <= 7 }
-}
+    // MARK: - Confidence Level (AI self-assessment)
 
-enum EventPriority: String, Codable, CaseIterable {
-    case high
-    case medium
-    case low
-}
+    /// How confident the AI is about this event's accuracy.
+    /// Displayed as a badge so users know what to verify.
+    enum ConfidenceLevel: String, Codable, CaseIterable {
+        case verified = "verified"       // Cross-referenced with known regulation
+        case high = "high"               // Based on official announcement
+        case projected = "projected"     // Based on regulatory patterns
+        case estimated = "estimated"     // AI's best guess
 
-enum EventStatus: String, Codable, CaseIterable {
-    case upcoming
-    case urgent
-    case completed
+        var displayName: String {
+            switch self {
+            case .verified: return "Verified"
+            case .high: return "High confidence"
+            case .projected: return "Projected"
+            case .estimated: return "Estimated"
+            }
+        }
+
+        var iconName: String {
+            switch self {
+            case .verified: return "checkmark.seal.fill"
+            case .high: return "checkmark.circle.fill"
+            case .projected: return "arrow.right.circle.fill"
+            case .estimated: return "questionmark.circle.fill"
+            }
+        }
+    }
+
+    // MARK: - Jurisdiction
+
+    struct Jurisdiction: Codable, Hashable {
+        let region: String      // "EU", "USA", "UK", etc.
+        let subRegion: String?  // "California", "Bavaria", specific member state
+        let authority: String?  // "FDA", "EMA", "FCA", "BaFin", "EDPB"
+
+        var displayName: String {
+            if let sub = subRegion {
+                return "\(region) — \(sub)"
+            }
+            return region
+        }
+
+        static let eu = Jurisdiction(region: "EU", subRegion: nil, authority: nil)
+        static let usa = Jurisdiction(region: "USA", subRegion: nil, authority: "FDA")
+        static let uk = Jurisdiction(region: "UK", subRegion: nil, authority: nil)
+    }
+
+    // MARK: - Recurring Info
+
+    struct RecurringInfo: Codable, Hashable {
+        let frequency: String   // "quarterly", "annually", "monthly"
+        let nextOccurrence: Date?
+    }
+
+    // MARK: - Computed Properties
+
+    /// Days until this event (negative = past)
+    var daysUntil: Int {
+        Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: Calendar.current.startOfDay(for: date)).day ?? 0
+    }
+
+    /// Human-readable urgency label
+    var urgencyLabel: String? {
+        let days = daysUntil
+        if days < 0 { return "Past" }
+        if days == 0 { return "Today" }
+        if days <= 7 { return "This week" }
+        if days <= 30 { return "This month" }
+        if days <= 90 { return "Next 3 months" }
+        return nil
+    }
+
+    /// Whether user should be extra cautious about this event's data
+    var needsVerification: Bool {
+        confidence == .estimated || confidence == .projected
+    }
 }

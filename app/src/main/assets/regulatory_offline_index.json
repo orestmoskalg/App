@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "sectorDefaults": {
+    "medical_devices": {
+      "links": [
+        {"title": "EU — Medical devices (EC)", "url": "https://health.ec.europa.eu/medical-devices-sector_en"},
+        {"title": "IMDRF", "url": "https://www.imdrf.org/"}
+      ]
+    },
+    "pharmaceuticals": {
+      "links": [
+        {"title": "EMA — Human medicines", "url": "https://www.ema.europa.eu/en/human-medicines"},
+        {"title": "EudraLex — Volume 4 GMP", "url": "https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en"}
+      ]
+    },
+    "food_feed": {
+      "links": [
+        {"title": "EU Food Safety — overview", "url": "https://food.ec.europa.eu/safety_en"},
+        {"title": "EFSA", "url": "https://www.efsa.europa.eu/en"}
+      ]
+    },
+    "cosmetics": {
+      "links": [
+        {"title": "EU — Cosmetics regulation", "url": "https://cosmetic.ec.europa.eu/"},
+        {"title": "SCCS opinions (EC)", "url": "https://health.ec.europa.eu/scientific-committees/scientific-committee-consumer-safety-sccs_en"}
+      ]
+    },
+    "chemicals_reach": {
+      "links": [
+        {"title": "ECHA", "url": "https://echa.europa.eu/"},
+        {"title": "REACH regulation (EUR-Lex)", "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006R1907"}
+      ]
+    },
+    "consumer_products": {
+      "links": [
+        {"title": "EU — Product safety & surveillance", "url": "https://commission.europa.eu/business-economy-euro/product-safety-and-requirements/product-safety_en"},
+        {"title": "RAPEX (Safety Gate)", "url": "https://ec.europa.eu/safety-gate/#/screen/home"}
+      ]
+    },
+    "agri_biotech": {
+      "links": [
+        {"title": "EU — Plant health & biocides", "url": "https://food.ec.europa.eu/plants_en"},
+        {"title": "ECHA — Biocidal products", "url": "https://echa.europa.eu/regulations/biocidal-products-regulation"}
+      ]
+    },
+    "environment_waste": {
+      "links": [
+        {"title": "EU Environment", "url": "https://environment.ec.europa.eu/"},
+        {"title": "Waste Framework Directive (EUR-Lex)", "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32008L0098"}
+      ]
+    },
+    "digital_privacy": {
+      "links": [
+        {"title": "EDPB", "url": "https://edpb.europa.eu/"},
+        {"title": "EU AI Act (EUR-Lex)", "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689"}
+      ]
+    },
+    "workplace_safety": {
+      "links": [
+        {"title": "EU-OSHA", "url": "https://osha.europa.eu/en"},
+        {"title": "EU — Machinery directive", "url": "https://single-market-economy.ec.europa.eu/sectors/machinery_en"}
+      ]
+    },
+    "construction_products": {
+      "links": [
+        {"title": "EU — Construction products regulation", "url": "https://single-market-economy.ec.europa.eu/sectors/construction/construction-products-regulation_en"}
+      ]
+    },
+    "automotive_transport": {
+      "links": [
+        {"title": "EU — Motor vehicles & type approval", "url": "https://single-market-economy.ec.europa.eu/sectors/automotive_en"},
+        {"title": "UNECE — Transport", "url": "https://unece.org/transport"}
+      ]
+    },
+    "tobacco_alcohol": {
+      "links": [
+        {"title": "EU — Tobacco products", "url": "https://health.ec.europa.eu/non-communicable-diseases/tobacco_en"},
+        {"title": "EU — Excise", "url": "https://taxation-customs.ec.europa.eu/taxation-1/excise-duties-excise_en"}
+      ]
+    },
+    "other_general": {
+      "links": [
+        {"title": "EU — Access to law (EUR-Lex)", "url": "https://eur-lex.europa.eu/"},
+        {"title": "WTO — Trade topics", "url": "https://www.wto.org/english/thewto_e/coher_e/trade_topics_e.htm"}
+      ]
+    }
+  },
+  "byCountry": {
+    "usa": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "FDA — CDRH databases", "url": "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfRes/res.cfm"},
+            {"title": "FDA — Recognized consensus standards", "url": "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfStandards/search.cfm"}
+          ]
+        },
+        "pharmaceuticals": {
+          "links": [
+            {"title": "FDA — Drugs", "url": "https://www.fda.gov/drugs"},
+            {"title": "FDA — Orange Book", "url": "https://www.accessdata.fda.gov/scripts/cder/ob/"}
+          ]
+        },
+        "food_feed": {
+          "links": [
+            {"title": "FDA — Food", "url": "https://www.fda.gov/food"},
+            {"title": "USDA — Food safety", "url": "https://www.usda.gov/food-safety"}
+          ]
+        },
+        "cosmetics": {
+          "links": [
+            {"title": "FDA — Cosmetics", "url": "https://www.fda.gov/cosmetics"}
+          ]
+        },
+        "chemicals_reach": {
+          "links": [
+            {"title": "EPA", "url": "https://www.epa.gov/"},
+            {"title": "TSCA (EPA)", "url": "https://www.epa.gov/laws-regulations/laws-and-executive-orders"}
+          ]
+        },
+        "digital_privacy": {
+          "links": [
+            {"title": "FTC — Privacy & security", "url": "https://www.ftc.gov/business-guidance/privacy-security"},
+            {"title": "NIST — Cybersecurity", "url": "https://www.nist.gov/cyberframework"}
+          ]
+        }
+      }
+    },
+    "ukraine": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "SLC — State Expert Centre (UA)", "url": "https://www.dlz.gov.ua/"}
+          ]
+        }
+      }
+    },
+    "poland": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "URPL — devices & IVD (PL)", "url": "https://www.urpl.gov.pl/en/0/18"}
+          ]
+        },
+        "pharmaceuticals": {
+          "links": [
+            {"title": "URPL — medicines (PL)", "url": "https://www.urpl.gov.pl/en"}
+          ]
+        }
+      }
+    },
+    "germany": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "BfArM — Medical devices", "url": "https://www.bfarm.de/EN/Medical-devices/medical-devices_node.html"}
+          ]
+        }
+      }
+    },
+    "france": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "ANSM — Medical devices", "url": "https://ansm.sante.fr/dispositifs-medicaux/"}
+          ]
+        }
+      }
+    },
+    "finland": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "Fimea — Medical devices", "url": "https://www.fimea.fi/web/en/medicaldevices"}
+          ]
+        }
+      }
+    },
+    "netherlands": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "IGJ — Medical technology", "url": "https://www.igj.nl/medische-technologie"}
+          ]
+        }
+      }
+    },
+    "eu": {
+      "sectors": {
+        "medical_devices": {
+          "links": [
+            {"title": "EU — Horizon scanning (health)", "url": "https://health.ec.europa.eu/latest-updates_en"}
+          ]
+        }
+      }
+    }
+  },
+  "nicheExtras": {
+    "Software as Medical Device SaMD AI ML": [
+      {"title": "MDCG 2019-11 — Qualification (SaMD)", "url": "https://health.ec.europa.eu/system/files/2021-10/md_mdcg_2019_11_en_0.pdf"},
+      {"title": "FDA — Software as Medical Device", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd"}
+    ],
+    "In Vitro Diagnostic Devices IVDR": [
+      {"title": "IVDR (EUR-Lex)", "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32017R0746"},
+      {"title": "EU — In vitro diagnostics", "url": "https://health.ec.europa.eu/medical-devices-sector/in-vitro-diagnostics_en"}
+    ],
+    "pharma_gmp_gdp_manufacturing": [
+      {"title": "EMA — GMP & inspections", "url": "https://www.ema.europa.eu/en/human-regulatory-overview/research-development/compliance/good-manufacturing-practice"}
+    ],
+    "food_haccp_food_safety": [
+      {"title": "Codex — Food hygiene", "url": "https://www.fao.org/fao-who-codexalimentarius/codex-texts/list-standards/en/"}
+    ],
+    "chem_reach_registration": [
+      {"title": "ECHA — REACH registration", "url": "https://echa.europa.eu/regulations/reach/registration"}
+    ],
+    "cosmetic_pif_safety": [
+      {"title": "EU — Product Information File (cosmetics)", "url": "https://cosmetic.ec.europa.eu/cosmetic-products/product-information-file_en"}
+    ],
+    "dp_gdpr_processing": [
+      {"title": "GDPR (EUR-Lex)", "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32016R0679"},
+      {"title": "EDPB — Guidelines", "url": "https://edpb.europa.eu/our-work-tools/our-documents/guidelines_en"}
+    ],
+    "consumer_gpsr_safety": [
+      {"title": "EU — General Product Safety Regulation", "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0988"}
+    ],
+    "chem_clp_classification": [
+      {"title": "ECHA — CLP", "url": "https://echa.europa.eu/regulations/clp"}
+    ],
+    "auto_type_approval": [
+      {"title": "EU — Vehicle approval", "url": "https://single-market-economy.ec.europa.eu/sectors/automotive/approval-motor-vehicles_en"}
+    ]
+  }
+}

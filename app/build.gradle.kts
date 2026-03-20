@@ -14,17 +14,16 @@ val secretsProperties = Properties().apply {
     }
 }
 
-val grokApiKey = providers.gradleProperty("GROK_API_KEY")
-    .orElse(secretsProperties.getProperty("GROK_API_KEY") ?: "")
-    .orElse(providers.environmentVariable("GROK_API_KEY"))
-    .orElse("")
-    .get()
+/** Priority: secrets.properties → Gradle -P / gradle.properties → environment (CI). */
+fun resolveSecret(name: String): String {
+    val fromSecrets = secretsProperties.getProperty(name)?.trim().orEmpty()
+    val fromGradle = (project.findProperty(name) as? String)?.trim().orEmpty()
+    val fromEnv = System.getenv(name)?.trim().orEmpty()
+    return listOf(fromSecrets, fromGradle, fromEnv).firstOrNull { it.isNotBlank() } ?: ""
+}
 
-val openAiApiKey = providers.gradleProperty("OPENAI_API_KEY")
-    .orElse(secretsProperties.getProperty("OPENAI_API_KEY") ?: "")
-    .orElse(providers.environmentVariable("OPENAI_API_KEY"))
-    .orElse("")
-    .get()
+val grokApiKey = resolveSecret("GROK_API_KEY")
+val openAiApiKey = resolveSecret("OPENAI_API_KEY")
 
 val keystoreProperties = Properties().apply {
     val keystoreFile = rootProject.file("keystore.properties")

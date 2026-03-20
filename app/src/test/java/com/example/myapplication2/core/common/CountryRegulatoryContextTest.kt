@@ -44,7 +44,7 @@ class CountryRegulatoryContextTest {
     }
 
     @Test
-    fun knowledgeSectorMatches_generalNicheIsMedicalSeedOnly() {
+    fun knowledgeSectorMatches_generalNicheIsNotMedicalOnly() {
         val card = DashboardCard.create(
             type = CardType.INSIGHT,
             title = "t",
@@ -67,7 +67,7 @@ class CountryRegulatoryContextTest {
             country = "Ukraine 🇺🇦",
         )
         assertThat(CountryRegulatoryContext.knowledgeSectorMatches(card, medical)).isTrue()
-        assertThat(CountryRegulatoryContext.knowledgeSectorMatches(card, food)).isFalse()
+        assertThat(CountryRegulatoryContext.knowledgeSectorMatches(card, food)).isTrue()
     }
 
     @Test

@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -33,8 +34,11 @@ import com.example.myapplication2.core.common.SectorCatalog
 import com.example.myapplication2.core.model.CardType
 import com.example.myapplication2.core.model.DashboardCard
 import com.example.myapplication2.core.model.Priority
+import com.example.myapplication2.data.calendar.StandingRequirementsCatalog
+import com.example.myapplication2.data.local.entity.EventUserNoteEntity
 import com.example.myapplication2.data.repository.CalendarRadarWorker
 import com.example.myapplication2.di.AppContainer
+import com.example.myapplication2.domain.model.StandingRequirement
 import com.example.myapplication2.domain.model.UserProfile
 import com.example.myapplication2.presentation.components.*
 import com.example.myapplication2.ui.theme.*
@@ -47,6 +51,30 @@ import java.util.*
 class CalendarViewModel(private val container: AppContainer) : ViewModel() {
     val profile = container.observeUserProfileUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** 0 Events, 1 Standing requirements, 2 Notes. */
+    var calendarHubTab by mutableIntStateOf(0)
+
+    var standingUrgencyFilter by mutableStateOf<StandingRequirement.Urgency?>(null)
+
+    val eventNotes: StateFlow<List<EventUserNoteEntity>> =
+        container.eventNotesRepository.observeAll()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val regulationConfig get() = container.regulationConfig
+
+    fun standingRequirements(profile: UserProfile?): List<StandingRequirement> {
+        val base = StandingRequirementsCatalog.forProfile(profile)
+        return StandingRequirementsCatalog.filterByUrgency(base, standingUrgencyFilter)
+    }
+
+    fun addEventNote(cardId: String, title: String, text: String) = viewModelScope.launch {
+        if (text.isNotBlank()) container.eventNotesRepository.addNote(cardId, title, text)
+    }
+
+    fun deleteEventNote(id: String) = viewModelScope.launch {
+        container.eventNotesRepository.deleteNote(id)
+    }
 
     val events: StateFlow<List<DashboardCard>> =
         container.observeCardsByTypeUseCase(CardType.REGULATORY_EVENT)
@@ -114,8 +142,17 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
             CountryRegulatoryContext.calendarEventMatchesProfile(e.jurisdictionKey, profile.country)
         }
         val byNiche = when {
-            selectedNiche != null -> byJurisdiction.filter { card ->
-                card.niche.equals(selectedNiche, ignoreCase = true) || (selectedNiche!! in card.niche)
+            selectedNiche != null -> {
+                val sel = NicheCatalog.resolvePromptKey(selectedNiche!!)
+                if (sel.isBlank()) {
+                    profile?.let { p -> byJurisdiction.filter { CountryRegulatoryContext.matchesProfileNiches(it, p) } }
+                        ?: byJurisdiction
+                } else {
+                    byJurisdiction.filter { card ->
+                        val ck = NicheCatalog.resolvePromptKey(card.niche)
+                        ck.isNotBlank() && ck.equals(sel, ignoreCase = true)
+                    }
+                }
             }
             profile != null -> byJurisdiction.filter { CountryRegulatoryContext.matchesProfileNiches(it, profile) }
             else -> byJurisdiction
@@ -141,8 +178,44 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
 @Composable
 fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
     LaunchedEffect(Unit) { vm.onCalendarScreenEntered() }
+    LaunchedEffect(Unit) {
+        if (vm.calendarHubTab > 2) vm.calendarHubTab = 0
+    }
     val events by vm.events.collectAsState()
     val profile by vm.profile.collectAsState()
+    val notes by vm.eventNotes.collectAsState()
+    val tabs = listOf("Events", "Requirements", "Notes")
+
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        ScrollableTabRow(
+            selectedTabIndex = vm.calendarHubTab,
+            edgePadding = 8.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = vm.calendarHubTab == index,
+                    onClick = { vm.calendarHubTab = index },
+                    text = { Text(title, maxLines = 1, style = MaterialTheme.typography.labelMedium) },
+                )
+            }
+        }
+        when (vm.calendarHubTab) {
+            0 -> CalendarEventsTab(vm, onCardClick, events, profile)
+            1 -> StandingRequirementsTabContent(vm, profile)
+            2 -> EventNotesTabContent(vm, notes)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarEventsTab(
+    vm: CalendarViewModel,
+    onCardClick: (String) -> Unit,
+    events: List<DashboardCard>,
+    profile: UserProfile?,
+) {
     val jurisdictionName = CountryRegulatoryContext.forCountry(profile?.country ?: "").jurisdictionName
     val filtered = vm.filteredEvents(events, profile)
     val nicheChips = remember(profile) {
@@ -165,7 +238,14 @@ fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
 
         // Header (reference: light background, dark text)
         Box(Modifier.fillMaxWidth().background(PureWhite)) {
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp)) {
+            Column(
+                Modifier.padding(
+                    start = AppDimens.headerPaddingHorizontal,
+                    end = AppDimens.headerPaddingHorizontal,
+                    top = AppDimens.headerPaddingTop,
+                    bottom = AppDimens.headerPaddingBottom,
+                ),
+            ) {
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                     Column {
                         Text("Regulatory Calendar", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = PrimaryTextDark)
@@ -251,17 +331,26 @@ fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
         }
 
         AnimatedVisibility(vm.error != null, enter = expandVertically(), exit = shrinkVertically()) {
-            Surface(Modifier.fillMaxWidth().padding(12.dp), RoundedCornerShape(12.dp), color = ErrorRed.copy(0.1f)) {
-                Row(Modifier.padding(12.dp), Arrangement.spacedBy(10.dp), Alignment.CenterVertically) {
-                    Icon(Icons.Filled.ErrorOutline, null, tint = ErrorRed, modifier = Modifier.size(16.dp))
+            Surface(
+                Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing),
+                RoundedCornerShape(12.dp),
+                color = ErrorRed.copy(0.1f),
+            ) {
+                Row(Modifier.padding(AppDimens.cardInnerPadding), Arrangement.spacedBy(10.dp), Alignment.CenterVertically) {
+                    Icon(Icons.Filled.ErrorOutline, null, tint = ErrorRed, modifier = Modifier.size(18.dp))
                     Text(vm.error ?: "", style = MaterialTheme.typography.bodySmall, color = ErrorRed, modifier = Modifier.weight(1f))
-                    IconButton(onClick = vm::dismissError, Modifier.size(20.dp)) { Icon(Icons.Filled.Close, null, Modifier.size(14.dp)) }
+                    IconButton(onClick = vm::dismissError, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.Close, "Dismiss", Modifier.size(18.dp))
+                    }
                 }
             }
         }
 
         if (vm.isLoading && events.isEmpty()) {
-            LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(
+                contentPadding = PaddingValues(AppDimens.screenPaddingHorizontal),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.listItemSpacing),
+            ) {
                 items(5) { LoadingCard() }
             }
         } else if (filtered.isEmpty() && !vm.isLoading) {
@@ -280,13 +369,13 @@ fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
                     }
                 }, modifier = Modifier.padding(top = 40.dp))
         } else {
-            LazyColumn(contentPadding = PaddingValues(bottom = 100.dp, top = 4.dp)) {
+            LazyColumn(contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset, top = 4.dp)) {
                 val urgents = filtered.filter { it.dateMillis in System.currentTimeMillis()..(System.currentTimeMillis() + 7*24*3600_000L) && (it.priority == Priority.CRITICAL || it.priority == Priority.HIGH) }
                 if (urgents.isNotEmpty()) {
                     item("urgent") {
-                        Surface(modifier = Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical=8.dp), shape = RoundedCornerShape(14.dp),
+                        Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = AppDimens.sectionSpacing), shape = RoundedCornerShape(AppDimens.cardCornerRadius),
                             color = ErrorRed.copy(0.09f), border = BorderStroke(1.5.dp, ErrorRed.copy(0.35f))) {
-                            Row(Modifier.padding(14.dp), Arrangement.spacedBy(12.dp), Alignment.CenterVertically) {
+                            Row(Modifier.padding(AppDimens.cardInnerPadding), Arrangement.spacedBy(12.dp), Alignment.CenterVertically) {
                                 Surface(shape = CircleShape, color = ErrorRed.copy(0.2f)) { Icon(Icons.Filled.Warning, null, tint = ErrorRed, modifier = Modifier.padding(8.dp).size(18.dp)) }
                                 Column(Modifier.weight(1f)) {
                                     Text("${urgents.size} urgent deadline${if(urgents.size==1)"" else "s"}!", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = ErrorRed)
@@ -306,7 +395,7 @@ fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
                     val isCurrent = mCal.get(Calendar.MONTH) == today.get(Calendar.MONTH) && mCal.get(Calendar.YEAR) == today.get(Calendar.YEAR)
                     val monthStr = SimpleDateFormat("LLLL yyyy", Locale.ENGLISH).format(mCal.time).replaceFirstChar { it.uppercase() }
                     item("hdr_$monthKey") {
-                        Row(Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical=14.dp), Arrangement.spacedBy(10.dp), Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 12.dp), Arrangement.spacedBy(10.dp), Alignment.CenterVertically) {
                             Box(Modifier.size(4.dp,28.dp).clip(RoundedCornerShape(2.dp)).background(if(isCurrent) AccentTealMain else BorderGray))
                             Text(monthStr, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = PrimaryTextDark)
                             if (isCurrent) Surface(shape = RoundedCornerShape(6.dp), color = AccentTealMain) { Text("Current", style = MaterialTheme.typography.labelSmall, color = PureWhite, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal=7.dp, vertical=3.dp)) }
@@ -319,8 +408,133 @@ fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
                             card = card,
                             onClick = { onCardClick(card.id) },
                             onPin = { vm.pin(card.id, !card.isPinned) },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StandingRequirementsTabContent(vm: CalendarViewModel, profile: UserProfile?) {
+    val uriHandler = LocalUriHandler.current
+    val reqs = vm.standingRequirements(profile)
+    Column(Modifier.fillMaxSize().padding(horizontal = AppDimens.screenPaddingHorizontal)) {
+        Text(
+            "Filtered by your country, sector, and selected niches in Settings — verify in primary sources.",
+            style = MaterialTheme.typography.bodySmall,
+            color = SecondaryTextMedium,
+            modifier = Modifier.padding(vertical = 8.dp),
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+            item {
+                FilterChip(
+                    selected = vm.standingUrgencyFilter == null,
+                    onClick = { vm.standingUrgencyFilter = null },
+                    label = { Text("All") },
+                )
+            }
+            items(StandingRequirement.Urgency.entries.toList()) { u ->
+                val label = when (u) {
+                    StandingRequirement.Urgency.Continuous -> "Continuous"
+                    StandingRequirement.Urgency.Triggered -> "Triggered"
+                    StandingRequirement.Urgency.Periodic -> "Periodic"
+                }
+                FilterChip(
+                    selected = vm.standingUrgencyFilter == u,
+                    onClick = { vm.standingUrgencyFilter = if (vm.standingUrgencyFilter == u) null else u },
+                    label = { Text(label) },
+                )
+            }
+        }
+        if (reqs.isEmpty()) {
+            EmptyState(
+                icon = Icons.Filled.Gavel,
+                title = "No matching requirements",
+                body = "Nothing in the catalog matches your country and niche selection yet. Try another niche in Settings, or another jurisdiction (EU/UK entries apply to EU profiles; US catalog entries are separate).",
+                modifier = Modifier.padding(top = 24.dp),
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.listItemSpacing),
+            ) {
+                items(reqs, key = { it.id }) { req ->
+                    Surface(shape = RoundedCornerShape(AppDimens.cardCornerRadius), color = PureWhite) {
+                        Column(Modifier.padding(AppDimens.cardInnerPadding)) {
+                            Text(req.title, fontWeight = FontWeight.Bold, color = PrimaryTextDark)
+                            Text(req.timeframeBadge, style = MaterialTheme.typography.labelSmall, color = AccentTealMain)
+                            Text(req.obligation, style = MaterialTheme.typography.bodySmall, color = SecondaryTextMedium, modifier = Modifier.padding(top = 6.dp))
+                            Text(req.legalBasis, style = MaterialTheme.typography.labelSmall, color = TertiaryGray, modifier = Modifier.padding(top = 4.dp))
+                            Text(
+                                "Authority: ${req.authority}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SecondaryTextMedium,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                            if (!req.sourceURL.isNullOrBlank()) {
+                                Row(
+                                    Modifier.padding(top = 8.dp).clickable {
+                                        runCatching { uriHandler.openUri(req.sourceURL!!) }
+                                    },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Icon(Icons.Outlined.OpenInNew, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(18.dp))
+                                    Text(
+                                        "Official resource",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = PrimaryGreen,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventNotesTabContent(vm: CalendarViewModel, notes: List<EventUserNoteEntity>) {
+    Column(Modifier.fillMaxSize().padding(horizontal = AppDimens.screenPaddingHorizontal)) {
+        Text(
+            "Notes linked to calendar events. Add or edit notes from the event detail screen.",
+            style = MaterialTheme.typography.bodySmall,
+            color = SecondaryTextMedium,
+            modifier = Modifier.padding(vertical = AppDimens.sectionSpacing),
+        )
+        if (notes.isEmpty()) {
+            EmptyState(
+                icon = Icons.Outlined.Note,
+                title = "No notes yet",
+                body = "Saved notes appear here after you add them from an event’s detail screen.",
+                modifier = Modifier.padding(top = 32.dp),
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.sectionSpacing),
+            ) {
+                items(notes, key = { it.id }) { n ->
+                    Surface(shape = RoundedCornerShape(AppDimens.cardCornerRadius), color = PureWhite) {
+                        Row(
+                            Modifier.padding(AppDimens.cardInnerPadding),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(n.eventTitle, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                                Text(n.text, style = MaterialTheme.typography.bodySmall, color = SecondaryTextMedium, maxLines = 4)
+                            }
+                            IconButton(onClick = { vm.deleteEventNote(n.id) }, modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = ErrorRed, modifier = Modifier.size(22.dp))
+                            }
+                        }
                     }
                 }
             }

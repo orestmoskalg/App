@@ -1,0 +1,47 @@
+{
+  "version": "2.0",
+  "eventsPerNicheBatch": 40,
+  "maxNichesPerRequest": 3,
+  "apiTimeoutSeconds": 60,
+  "maxRetries": 3,
+  "cacheTTLMinutes": 120,
+  "countries": [
+    "EU", "UK", "USA", "Canada", "Australia", "Switzerland",
+    "Japan", "China", "Brazil", "India", "South Korea",
+    "Turkey", "UAE", "Singapore", "Mexico",
+    "International (WHO/UN/ISO/ICH)"
+  ],
+  "defaultDateRangeMonths": 12,
+  "notificationLeadDays": {
+    "critical": [90, 30, 7, 1],
+    "high": [30, 7, 1],
+    "medium": [7, 1],
+    "low": [1]
+  },
+  "positioningStatement": "Regulatory Radar — AI-powered horizon scanning. Always verify critical dates with official sources.",
+  "dataTransparencyVersion": "2.0",
+  "niches": [
+    {"key": "medtech_mdr_ivdr", "prompt": "MedTech (MDR/IVDR)", "display": "MedTech (MDR/IVDR)", "category": "MedTech"},
+    {"key": "medical_software_samd", "prompt": "Medical Software SaMD", "display": "Medical Software (SaMD)", "category": "MedTech"},
+    {"key": "ivd_diagnostics", "prompt": "IVD Diagnostics (IVDR)", "display": "IVD Diagnostics", "category": "MedTech"},
+    {"key": "pharma_drug_device", "prompt": "Pharma & Drug-Device Combinations", "display": "Pharma & Drug-Device", "category": "MedTech"},
+    {"key": "orthopedics_trauma", "prompt": "Orthopedics & Trauma Devices", "display": "Orthopedics & Trauma", "category": "MedTech"},
+    {"key": "cardiovascular_devices", "prompt": "Cardiovascular Devices", "display": "Cardiovascular Devices", "category": "MedTech"},
+    {"key": "ophthalmic_dental", "prompt": "Ophthalmic & Dental Devices", "display": "Ophthalmic & Dental", "category": "MedTech"},
+    {"key": "fintech_banking", "prompt": "FinTech & Banking Regulation", "display": "FinTech & Banking", "category": "FinTech"},
+    {"key": "cryptocurrency_blockchain", "prompt": "Cryptocurrency & Blockchain Regulation", "display": "Crypto & Blockchain", "category": "FinTech"},
+    {"key": "ai_act_digital", "prompt": "EU AI Act & Digital Services Act", "display": "AI Act & DSA", "category": "Digital"},
+    {"key": "gdpr_ccpa_privacy", "prompt": "GDPR/CCPA Data Privacy", "display": "Data Privacy", "category": "Digital"},
+    {"key": "cybersecurity_nis2", "prompt": "Cybersecurity & NIS2 Directive", "display": "Cybersecurity & NIS2", "category": "Digital"},
+    {"key": "ai_ml_regulated", "prompt": "AI/ML in Regulated Industries", "display": "AI/ML in Regulated", "category": "Digital"},
+    {"key": "digital_markets_act", "prompt": "Digital Markets Act (DMA)", "display": "Digital Markets Act", "category": "Digital"},
+    {"key": "esg_sustainability", "prompt": "ESG & Sustainability Reporting", "display": "ESG & Sustainability", "category": "Legal"},
+    {"key": "sanctions_export", "prompt": "Sanctions & Export Controls", "display": "Sanctions & Export", "category": "Legal"},
+    {"key": "labor_employment", "prompt": "Labor & Employment Law", "display": "Labor & Employment", "category": "Legal"},
+    {"key": "automotive_unece", "prompt": "Automotive Regulation (UN ECE, Euro 7)", "display": "Automotive", "category": "Industrial"},
+    {"key": "food_safety_haccp", "prompt": "Food Safety & HACCP", "display": "Food Safety", "category": "Industrial"},
+    {"key": "cosmetics_reach", "prompt": "Cosmetics & REACH Chemical Regulation", "display": "Cosmetics & REACH", "category": "Industrial"},
+    {"key": "chemicals_regulation", "prompt": "Chemicals Regulation (CLP, REACH, GHS)", "display": "Chemicals", "category": "Industrial"},
+    {"key": "environmental_regulations", "prompt": "Environmental Regulations (ETS, CBAM, EIA)", "display": "Environmental", "category": "Industrial"}
+  ]
+}

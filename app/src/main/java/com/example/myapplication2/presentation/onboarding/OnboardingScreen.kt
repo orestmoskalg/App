@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,15 +52,20 @@ fun OnboardingScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(NavyBlue, MidnightBlue)))
+            .background(
+                Brush.verticalGradient(
+                    listOf(ContentBg, LightTealBg.copy(alpha = 0.45f), ContentBg),
+                ),
+            ),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 24.dp),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -71,17 +75,21 @@ fun OnboardingScreen(
                             .weight(1f)
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(if (i <= step) PrimaryGreen else BorderDark)
+                            .background(if (i <= step) PrimaryGreen else BorderGray),
                     )
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(8.dp))
 
-            AnimatedContent(targetState = step, transitionSpec = {
-                slideInHorizontally { it } + fadeIn() togetherWith
-                    slideOutHorizontally { -it } + fadeOut()
-            }) { currentStep ->
+            AnimatedContent(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                targetState = step,
+                transitionSpec = {
+                    slideInHorizontally { it } + fadeIn() togetherWith
+                        slideOutHorizontally { -it } + fadeOut()
+                },
+            ) { currentStep ->
                 when (currentStep) {
                     0 -> StepCountry(
                         countries = countries,
@@ -122,15 +130,20 @@ private fun StepCountry(
     onSelect: (String) -> Unit,
     onNext: () -> Unit,
 ) {
-    Column {
-        Text("Where do you work?", style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold, color = TextPrimary)
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            "Where do you work?",
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryTextDark,
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             "Country / jurisdiction first — all research and prompts follow this choice.",
-            style = MaterialTheme.typography.bodyLarge, color = TextSecondary
+            style = MaterialTheme.typography.bodyLarge,
+            color = SecondaryTextMedium,
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -143,18 +156,23 @@ private fun StepCountry(
                     onClick = { onSelect(country) },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) PureWhite else PureWhite.copy(alpha = 0.12f),
+                        containerColor = if (isSelected) LightTealBg else PureWhite,
                     ),
-                    border = if (isSelected) null else BorderStroke(1.dp, PureWhite.copy(alpha = 0.25f)),
+                    border = BorderStroke(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) PrimaryGreen else BorderGray,
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 2.dp else 0.dp),
                 ) {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(20.dp),
+                        modifier = Modifier.fillMaxWidth().padding(18.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            country, style = MaterialTheme.typography.titleMedium,
+                            country,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isSelected) Color.White else TextPrimary,
+                            color = PrimaryTextDark,
                             textAlign = TextAlign.Center,
                         )
                     }
@@ -164,9 +182,15 @@ private fun StepCountry(
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = onNext,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(16.dp),
             enabled = selected.isNotEmpty(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryGreen,
+                contentColor = PureWhite,
+                disabledContainerColor = BorderGray,
+                disabledContentColor = TertiaryGray,
+            ),
         ) {
             Text("Next", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
@@ -179,13 +203,18 @@ private fun StepSector(
     onSelect: (String) -> Unit,
     onNext: () -> Unit,
 ) {
-    Column {
-        Text("Regulatory sector", style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold, color = TextPrimary)
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            "Regulatory sector",
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryTextDark,
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             "Pick the compliance domain (not only medical devices — food, chemicals, digital, etc.).",
-            style = MaterialTheme.typography.bodyLarge, color = TextSecondary
+            style = MaterialTheme.typography.bodyLarge,
+            color = SecondaryTextMedium,
         )
         Spacer(Modifier.height(16.dp))
         LazyVerticalGrid(
@@ -200,17 +229,21 @@ private fun StepSector(
                     onClick = { onSelect(s.key) },
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) PureWhite.copy(alpha = 0.28f) else PureWhite.copy(alpha = 0.1f),
+                        containerColor = if (isSelected) LightTealBg else PureWhite,
                     ),
-                    border = BorderStroke(1.dp, if (isSelected) PrimaryGreen else PureWhite.copy(alpha = 0.25f)),
+                    border = BorderStroke(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) PrimaryGreen else BorderGray,
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 2.dp else 0.dp),
                 ) {
-                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(s.icon, style = MaterialTheme.typography.headlineSmall)
                         Text(
                             s.label,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary,
+                            color = PrimaryTextDark,
                         )
                     }
                 }
@@ -219,9 +252,15 @@ private fun StepSector(
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = onNext,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(16.dp),
             enabled = selected.isNotEmpty(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryGreen,
+                contentColor = PureWhite,
+                disabledContainerColor = BorderGray,
+                disabledContentColor = TertiaryGray,
+            ),
         ) {
             Text("Next", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
@@ -236,13 +275,18 @@ private fun StepNiches(
 ) {
     var current by remember(sectorKey) { mutableStateOf(selected) }
     val niches = remember(sectorKey) { NicheCatalog.forSector(sectorKey) }
-    Column {
-        Text("Your niches", style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold, color = TextPrimary)
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            "Your niches",
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryTextDark,
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             "Select 1–5 focus tags inside this sector",
-            style = MaterialTheme.typography.bodyLarge, color = TextSecondary
+            style = MaterialTheme.typography.bodyLarge,
+            color = SecondaryTextMedium,
         )
         Spacer(Modifier.height(8.dp))
         Column(
@@ -261,9 +305,13 @@ private fun StepNiches(
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) PureWhite.copy(alpha = 0.25f) else PureWhite.copy(alpha = 0.1f),
+                        containerColor = if (isSelected) LightTealBg else PureWhite,
                     ),
-                    border = BorderStroke(1.dp, if (isSelected) PrimaryGreen else PureWhite.copy(alpha = 0.25f)),
+                    border = BorderStroke(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) PrimaryGreen else BorderGray,
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 2.dp else 0.dp),
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp).fillMaxWidth(),
@@ -272,12 +320,20 @@ private fun StepNiches(
                     ) {
                         Text(niche.icon, style = MaterialTheme.typography.titleLarge)
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(niche.name, style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                            Text(niche.nameEn, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                            Text(
+                                niche.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PrimaryTextDark,
+                            )
+                            Text(
+                                niche.nameEn,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SecondaryTextMedium,
+                            )
                         }
                         if (isSelected) {
-                            Icon(Icons.Filled.CheckCircle, null, tint = PrimaryGreen, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Filled.CheckCircle, null, tint = PrimaryGreen, modifier = Modifier.size(22.dp))
                         }
                     }
                 }
@@ -286,39 +342,54 @@ private fun StepNiches(
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = { onNext(current) },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(16.dp),
             enabled = current.isNotEmpty(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryGreen,
+                contentColor = PureWhite,
+                disabledContainerColor = BorderGray,
+                disabledContentColor = TertiaryGray,
+            ),
         ) {
-            Text("Next (${current.size} selected)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                "Next (${current.size} selected)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
         }
     }
 }
 
 @Composable
 private fun StepRole(roles: List<Pair<String, String>>, onSelect: (String) -> Unit) {
-    Column {
-        Text("Your role", style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold, color = TextPrimary)
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            "Your role",
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryTextDark,
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             "How do you work with regulations?",
-            style = MaterialTheme.typography.bodyLarge, color = TextSecondary
+            style = MaterialTheme.typography.bodyLarge,
+            color = SecondaryTextMedium,
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(20.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.weight(1f),
         ) {
             items(roles) { (role, icon) ->
                 Card(
                     onClick = { onSelect(role) },
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = PureWhite.copy(alpha = 0.12f),
-                    ),
-                    border = BorderStroke(1.dp, PureWhite.copy(alpha = 0.25f)),
+                    colors = CardDefaults.cardColors(containerColor = PureWhite),
+                    border = BorderStroke(1.dp, BorderGray),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -329,7 +400,7 @@ private fun StepRole(roles: List<Pair<String, String>>, onSelect: (String) -> Un
                             role,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary,
+                            color = PrimaryTextDark,
                         )
                     }
                 }
