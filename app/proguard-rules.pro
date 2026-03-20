@@ -54,3 +54,6 @@
 -keepclassmembers class * extends androidx.work.CoroutineWorker {
     <init>(android.content.Context,androidx.work.WorkerParameters);
 }
+
+# AlarmManager → BroadcastReceiver
+-keep class com.example.myapplication2.notifications.RegulatoryNotificationReceiver { *; }

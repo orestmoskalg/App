@@ -31,7 +31,7 @@ class AppContainer(val context: Context) {
         val openAiKey = runCatching { BuildConfig.OPENAI_API_KEY }.getOrDefault("").trim()
         val grokKey = runCatching { BuildConfig.GROK_API_KEY }.getOrDefault("").trim()
         val buildKey = if (openAiKey.isNotBlank()) openAiKey else grokKey
-        GrokApi(buildKey)
+        GrokApi(buildKey, regulationConfig)
     }
 
     fun getGrokApi(): GrokApi = _grokApi
@@ -41,7 +41,9 @@ class AppContainer(val context: Context) {
     val insightsRepository: InsightsRepository by lazy { RemoteInsightsRepository(_grokApi) }
     val strategyRepository: StrategyRepository by lazy { RemoteStrategyRepository(_grokApi) }
     val learningRepository: LearningRepository by lazy { RemoteLearningRepository(_grokApi) }
-    val calendarRepository: CalendarRepository by lazy { RemoteCalendarRepository(_grokApi) }
+    val calendarRepository: CalendarRepository by lazy {
+        RemoteCalendarRepository(_grokApi, regulationConfig)
+    }
 
     val observePinnedCardsUseCase by lazy { ObservePinnedCardsUseCase(cardRepository) }
     val observeSearchHistoryUseCase by lazy { ObserveSearchHistoryUseCase(cardRepository) }

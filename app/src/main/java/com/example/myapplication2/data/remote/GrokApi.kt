@@ -2,6 +2,7 @@ package com.example.myapplication2.data.remote
 
 import com.example.myapplication2.BuildConfig
 import com.example.myapplication2.core.common.AppJson
+import com.example.myapplication2.core.config.RegulationConfig
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -10,7 +11,10 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlin.math.min
+import kotlin.math.pow
 import java.util.concurrent.TimeUnit
 
 // ── Request / Response models ──────────────────────────────────────────────────
@@ -52,7 +56,7 @@ data class WebCitation(
 sealed class GrokError(message: String, cause: Throwable? = null) : Exception(message, cause) {
     class Unauthorized(msg: String) : GrokError(msg)
     class RateLimited(msg: String) : GrokError(msg)
-    class ServerError(code: Int, msg: String) : GrokError("HTTP $code: $msg")
+    class ServerError(val code: Int, msg: String) : GrokError("HTTP $code: $msg")
     class EmptyResponse : GrokError("API returned empty response")
     class ParseError(cause: Throwable) : GrokError("Failed to parse API response", cause)
     class NetworkError(cause: Throwable) : GrokError("Network error: ${cause.message}", cause)
@@ -71,7 +75,10 @@ private const val SOCIAL_MAX_TOKENS   = 2048
 // NOTE: Class name kept as GrokApi for compatibility with existing codebase.
 // Internally calls OpenAI API.
 
-class GrokApi(private var apiKey: String) {
+class GrokApi(
+    private var apiKey: String,
+    private val regulationConfig: RegulationConfig = RegulationConfig(),
+) {
 
     private val json      = AppJson
     private val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -79,10 +86,12 @@ class GrokApi(private var apiKey: String) {
     /** Hot-swap the API key — new key is used on the very next request. */
     fun updateKey(newKey: String) { apiKey = newKey }
 
+    private val timeoutSec: Long = regulationConfig.apiTimeoutSeconds.toLong().coerceAtLeast(15L)
+
     private val client: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(90, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(timeoutSec, TimeUnit.SECONDS)
+        .readTimeout(timeoutSec, TimeUnit.SECONDS)
+        .writeTimeout(timeoutSec, TimeUnit.SECONDS)
         .apply {
             if (BuildConfig.DEBUG) {
                 addInterceptor(HttpLoggingInterceptor().apply {
@@ -100,20 +109,44 @@ class GrokApi(private var apiKey: String) {
         userPrompt: String,
         maxTokens: Int = DEFAULT_MAX_TOKENS,
     ): String = withContext(Dispatchers.IO) {
+        chatWithRetries { encodeChatBody(systemPrompt, userPrompt, maxTokens) }
+    }
+
+    private fun encodeChatBody(systemPrompt: String, userPrompt: String, maxTokens: Int): okhttp3.RequestBody {
         val request = GrokRequest(
             messages = listOf(
                 GrokMessage("system", systemPrompt),
-                GrokMessage("user",   userPrompt),
+                GrokMessage("user", userPrompt),
             ),
             max_tokens = maxTokens,
         )
-        val body = json.encodeToString(GrokRequest.serializer(), request)
-            .toRequestBody(mediaType)
-        val raw = executeRaw(body)
-        val response = runCatching { json.decodeFromString(GrokResponse.serializer(), raw) }
-            .getOrElse { throw GrokError.ParseError(it) }
-        response.choices.firstOrNull()?.message?.content
-            ?: throw GrokError.EmptyResponse()
+        return json.encodeToString(GrokRequest.serializer(), request).toRequestBody(mediaType)
+    }
+
+    private suspend fun chatWithRetries(buildBody: () -> okhttp3.RequestBody): String {
+        val max = regulationConfig.maxRetries.coerceAtLeast(1)
+        var last: Exception? = null
+        for (attempt in 0 until max) {
+            try {
+                val raw = executeRaw(buildBody())
+                val response = runCatching { json.decodeFromString(GrokResponse.serializer(), raw) }
+                    .getOrElse { throw GrokError.ParseError(it) }
+                return response.choices.firstOrNull()?.message?.content
+                    ?: throw GrokError.EmptyResponse()
+            } catch (e: GrokError.RateLimited) {
+                last = e
+                if (attempt == max - 1) throw e
+            } catch (e: GrokError.ServerError) {
+                last = e
+                if (e.code !in 502..504 || attempt == max - 1) throw e
+            } catch (e: GrokError.NetworkError) {
+                last = e
+                if (attempt == max - 1) throw e
+            }
+            val backoff = min(10_000L, (2.0.pow(attempt).toLong() * 1000L).coerceAtLeast(500L))
+            delay(backoff)
+        }
+        throw last ?: GrokError.EmptyResponse()
     }
 
     // ── Web-enriched chat (simulated via system prompt) ────────────────────────
@@ -135,23 +168,16 @@ IMPORTANT: Your training data includes EU MDR 2017/745, IVDR 2017/746, all MDCG 
 documents up to 2024, and major regulatory news. Use this knowledge to simulate real
 practitioner discussions. Generate realistic citations in the format the caller expects."""
 
-        val request = GrokRequest(
-            messages = listOf(
-                GrokMessage("system", enrichedSystem),
-                GrokMessage("user",   userPrompt),
-            ),
-            max_tokens = maxTokens,
-        )
-        val body = json.encodeToString(GrokRequest.serializer(), request)
-            .toRequestBody(mediaType)
-        val raw = executeRaw(body)
-        val response = runCatching { json.decodeFromString(GrokResponse.serializer(), raw) }
-            .getOrElse { throw GrokError.ParseError(it) }
-        val content = response.choices.firstOrNull()?.message?.content
-            ?: throw GrokError.EmptyResponse()
-
-        // OpenAI doesn't return citation objects — return empty list.
-        // The social summary will be parsed from the text content only.
+        val content = chatWithRetries {
+            val request = GrokRequest(
+                messages = listOf(
+                    GrokMessage("system", enrichedSystem),
+                    GrokMessage("user", userPrompt),
+                ),
+                max_tokens = maxTokens,
+            )
+            json.encodeToString(GrokRequest.serializer(), request).toRequestBody(mediaType)
+        }
         GrokSearchResult(content = content, citations = emptyList())
     }
 

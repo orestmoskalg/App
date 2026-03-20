@@ -1,6 +1,7 @@
 package com.example.myapplication2.data.repository
 
 import com.example.myapplication2.core.common.AppJson
+import com.example.myapplication2.core.config.RegulationConfig
 import com.example.myapplication2.core.common.CountryRegulatoryContext
 import com.example.myapplication2.core.common.RegulatoryPrepLinks
 import com.example.myapplication2.core.common.NicheCatalog
@@ -10,6 +11,7 @@ import com.example.myapplication2.core.model.*
 import com.example.myapplication2.data.remote.GrokApi
 import com.example.myapplication2.domain.model.UserProfile
 import com.example.myapplication2.domain.repository.*
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -48,6 +50,48 @@ internal fun String.cleanJsonArray(): String {
     val s = indexOfFirst { it == '[' || it == '{' }
     val e = indexOfLast  { it == ']' || it == '}' }
     return if (s >= 0 && e >= 0) substring(s, e + 1) else this
+}
+
+/** Strip markdown fences, trim to outer array/object, fix trailing commas (v2 parser fallback). */
+internal fun String.sanitizeJsonArrayDeep(): String {
+    var s = trim()
+    if (s.startsWith("```")) {
+        s = s.substringAfter("\n")
+        if (s.endsWith("```")) s = s.dropLast(3)
+        s = s.trim()
+    }
+    val si = s.indexOfFirst { it == '[' || it == '{' }
+    val ei = s.indexOfLast { it == ']' || it == '}' }
+    if (si >= 0 && ei >= 0) s = s.substring(si, ei + 1)
+    return s.replace(Regex(",\\s*([}\\]])"), "$1")
+}
+
+private fun extractTopJsonArray(text: String): String? {
+    val start = text.indexOf('[').takeIf { it >= 0 } ?: return null
+    var depth = 0
+    for (i in start until text.length) {
+        when (text[i]) {
+            '[' -> depth++
+            ']' -> {
+                depth--
+                if (depth == 0) return text.substring(start, i + 1)
+            }
+        }
+    }
+    return null
+}
+
+internal fun parseJsonArrayLenient(raw: String): JsonArray {
+    val candidates = listOfNotNull(
+        raw.trim(),
+        raw.sanitizeJsonArrayDeep(),
+        extractTopJsonArray(raw)?.sanitizeJsonArrayDeep(),
+    ).distinct()
+    for (c in candidates) {
+        if (c.isBlank()) continue
+        runCatching { return AppJson.parseToJsonElement(c).jsonArray }.getOrNull()
+    }
+    return JsonArray(emptyList())
 }
 
 internal fun String.cleanMarkdown(): String = this
@@ -350,7 +394,10 @@ Return JSON array of exactly 20 objects:
 //  CALENDAR  — real web search via chatWithWebSearch
 // ══════════════════════════════════════════════════════════════════════════════
 
-class RemoteCalendarRepository(private val api: GrokApi) : CalendarRepository {
+class RemoteCalendarRepository(
+    private val api: GrokApi,
+    private val config: RegulationConfig,
+) : CalendarRepository {
 
     override suspend fun generateCalendar(
         niches: List<String>,
@@ -358,35 +405,51 @@ class RemoteCalendarRepository(private val api: GrokApi) : CalendarRepository {
     ): List<DashboardCard> {
         val ctx = CountryRegulatoryContext.forCountry(userProfile.country)
         return try {
-            val nichesList = niches.take(4)
-            val nichesStr = nichesList.joinToString(", ")
-            val singleNiche = nichesList.size == 1
-            val cal       = Calendar.getInstance()
-            val fmt       = SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH)
-            val from      = fmt.format(cal.time)
-            cal.add(Calendar.MONTH, 14)
-            val to        = fmt.format(cal.time)
+            val resolvedNiches = niches
+                .ifEmpty { userProfile.niches }
+                .map { NicheCatalog.resolvePromptKey(it) }
+                .filter { it.isNotBlank() }
+                .distinct()
+            val nicheBatches = if (resolvedNiches.isEmpty()) {
+                listOf(emptyList())
+            } else {
+                resolvedNiches.chunked(config.maxNichesPerRequest.coerceAtLeast(1))
+            }
+            val cal = Calendar.getInstance()
+            val fmt = SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH)
+            val from = fmt.format(cal.time)
+            cal.add(Calendar.MONTH, config.defaultDateRangeMonths.coerceIn(3, 24))
+            val to = fmt.format(cal.time)
             val searchSources = ctx.searchKeywords.joinToString(", ").take(200)
             val sectorKey = SectorRegulatoryContext.sectorKeyOrDefault(userProfile)
             val sectorLabel = SectorCatalog.labelOrKey(sectorKey)
+            val eventsTarget = (config.eventsPerNicheBatch / 3).coerceIn(8, 15)
 
-            // Use chatWithWebSearch to get REAL current regulatory news for the user's jurisdiction
             val systemPrompt = """You are a regulatory calendar expert for $sectorLabel in ${ctx.jurisdictionName}.
 ${dateCtx()}
 Search for REAL current regulatory events, deadlines, and guidance relevant to $sectorLabel in ${ctx.jurisdictionName}.
 Use sources such as: $searchSources
-Return ONLY valid JSON array. No markdown. No prose."""
+All text in English. Return ONLY valid JSON array. No markdown. No prose."""
 
-            val nicheInstruction = if (singleNiche) {
-                "\nReturn ONLY events directly relevant to this single niche: \"$nichesStr\". Exclude general events that do not apply to it.\n"
-            } else ""
-
-            val userPrompt = """
-Find and return ALL relevant real ${ctx.jurisdictionName} regulatory events for sector "$sectorLabel" and niches: "$nichesStr".
+            val allParsed = mutableListOf<DashboardCard>()
+            nicheBatches.forEachIndexed { batchIndex, batch ->
+                val nichesStr = if (batch.isEmpty()) {
+                    "General — infer from sector \"$sectorLabel\" and user profile"
+                } else {
+                    batch.joinToString(", ")
+                }
+                val singleNiche = batch.size == 1
+                val nicheInstruction = if (singleNiche) {
+                    "\nReturn ONLY events directly relevant to this single niche: \"$nichesStr\". Exclude events that do not apply to it.\n"
+                } else {
+                    ""
+                }
+                val userPrompt = """
+Find and return exactly $eventsTarget relevant real ${ctx.jurisdictionName} regulatory events for sector "$sectorLabel" and niches: "$nichesStr".
 $nicheInstruction
 Calendar window: $from → $to
 
-IMPORTANT: You MUST return at least 15 events, and preferably 20 or more. Include every relevant deadline, conference, guidance update, and regulatory milestone you can identify. Do not stop at 4–5 events.
+Do not exceed $eventsTarget events — keep the JSON complete and valid (truncated JSON breaks the app).
 
 Search for (focus on ${ctx.jurisdictionName} and $sectorLabel):
 ${ctx.searchKeywords.take(10).joinToString("\n") { "- $it" }}
@@ -396,8 +459,8 @@ ${ctx.searchKeywords.take(10).joinToString("\n") { "- $it" }}
 - Periodic reporting, renewal, registration, and certificate deadlines typical for this sector
 - Transition deadlines and compliance milestones
 
-Return a JSON array. Each object = one event. Use SHORT body (2–3 sentences, ~80 words) so you can include many events.
-Each event MUST include "links": an array of 2 to 5 objects with real https URLs (official regulation, authority, guidance, standard, register) that help the regulated company prepare — not generic homepages only.
+Return a JSON array. Each object = one event. Use SHORT body (2–3 sentences, ~80 words).
+Each event MUST include "links": an array of 2 to 5 objects with real https URLs (official regulation, authority, guidance, standard, register).
 [{
   "title": "Real event title — max 80 chars",
   "subtitle": "Official source • event type",
@@ -415,21 +478,26 @@ Each event MUST include "links": an array of 2 to 5 objects with real https URLs
   ]
 }]"""
 
-            val result = api.chatWithWebSearch(
-                systemPrompt = systemPrompt,
-                userPrompt   = userPrompt,
-                maxTokens    = 8192,
-            )
+                val result = api.chatWithWebSearch(
+                    systemPrompt = systemPrompt,
+                    userPrompt = userPrompt,
+                    maxTokens = 8192,
+                )
+                val arr = parseJsonArrayLenient(result.content)
+                val nicheKeysForParse = if (batch.isEmpty()) niches.ifEmpty { userProfile.niches } else batch
+                arr.mapNotNull { parseEvent(it, nicheKeysForParse, ctx) }
+                    .map { RegulatoryPrepLinks.mergeIntoCard(it, ctx) }
+                    .filter { it.title.isNotBlank() }
+                    .forEach { allParsed.add(it) }
 
-            val parsed = AppJson.parseToJsonElement(result.content.cleanJsonArray()).jsonArray
-                .mapNotNull { parseEvent(it, niches, ctx) }
-                .map { RegulatoryPrepLinks.mergeIntoCard(it, ctx) }
-                .filter { it.title.isNotBlank() }
+                if (batchIndex < nicheBatches.lastIndex) delay(500)
+            }
+
+            val deduped = allParsed.distinctBy { "${it.title.lowercase().trim()}_${it.dateMillis}" }
                 .sortedBy { it.dateMillis }
 
-            parsed.ifEmpty { SeedContentFactory.calendarCards(niches, ctx.jurisdictionKey) }
+            deduped.ifEmpty { SeedContentFactory.calendarCards(niches, ctx.jurisdictionKey) }
         } catch (e: Exception) {
-            // Do not silently fall back: GenerateRegulatoryCalendarUseCase must skip clear/save on failure.
             throw e
         }
     }

@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.res.Configuration
 import android.util.Log
 import com.example.myapplication2.di.AppContainer
+import com.example.myapplication2.notifications.RegulatoryNotificationService
 import java.util.Locale
 
 class RegulationApplication : Application() {
@@ -12,6 +13,7 @@ class RegulationApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        RegulatoryNotificationService.initialize(this)
         Locale.setDefault(Locale.ENGLISH)
         val config = Configuration(resources.configuration)
         config.setLocale(Locale.ENGLISH)

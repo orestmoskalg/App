@@ -421,6 +421,8 @@ fun RegulatoryEventModuleCard(
     card: DashboardCard,
     onClick: () -> Unit,
     onPin: (() -> Unit)? = null,
+    onShare: (() -> Unit)? = null,
+    onAddToCalendar: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val today = remember { Calendar.getInstance() }
@@ -540,6 +542,16 @@ fun RegulatoryEventModuleCard(
                 }
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (onShare != null) {
+                    IconButton(onClick = onShare, Modifier.size(40.dp)) {
+                        Icon(Icons.Outlined.Share, "Share", tint = SecondaryTextMedium, modifier = Modifier.size(18.dp))
+                    }
+                }
+                if (onAddToCalendar != null) {
+                    IconButton(onClick = onAddToCalendar, Modifier.size(40.dp)) {
+                        Icon(Icons.Outlined.Event, "Add to calendar", tint = SecondaryTextMedium, modifier = Modifier.size(18.dp))
+                    }
+                }
                 if (onPin != null) {
                     IconButton(onClick = onPin, Modifier.size(40.dp)) {
                         Icon(

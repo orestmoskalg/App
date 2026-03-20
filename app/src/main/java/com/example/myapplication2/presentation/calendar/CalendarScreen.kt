@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -34,9 +35,12 @@ import com.example.myapplication2.core.common.SectorCatalog
 import com.example.myapplication2.core.model.CardType
 import com.example.myapplication2.core.model.DashboardCard
 import com.example.myapplication2.core.model.Priority
+import com.example.myapplication2.core.common.RegulatoryGlossary
+import com.example.myapplication2.data.calendar.RegulatoryEventExport
 import com.example.myapplication2.data.calendar.StandingRequirementsCatalog
 import com.example.myapplication2.data.local.entity.EventUserNoteEntity
 import com.example.myapplication2.data.repository.CalendarRadarWorker
+import com.example.myapplication2.notifications.RegulatoryNotificationService
 import com.example.myapplication2.di.AppContainer
 import com.example.myapplication2.domain.model.StandingRequirement
 import com.example.myapplication2.domain.model.UserProfile
@@ -126,7 +130,11 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
                     runCatching { CalendarRadarWorker.scheduleImmediate(container.appContext) }
                 }
                 val niches = (nicheKey ?: selectedNiche)?.let { listOf(it) } ?: profile.niches
-                container.generateCalendarUseCase(niches, profile).onFailure { err -> error = err.message }
+                container.generateCalendarUseCase(niches, profile)
+                    .onSuccess { cards ->
+                        RegulatoryNotificationService.scheduleFromCards(container.appContext, cards)
+                    }
+                    .onFailure { err -> error = err.message }
             } finally {
                 isLoading = false
             }
@@ -179,12 +187,12 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
 fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
     LaunchedEffect(Unit) { vm.onCalendarScreenEntered() }
     LaunchedEffect(Unit) {
-        if (vm.calendarHubTab > 2) vm.calendarHubTab = 0
+        if (vm.calendarHubTab > 3) vm.calendarHubTab = 0
     }
     val events by vm.events.collectAsState()
     val profile by vm.profile.collectAsState()
     val notes by vm.eventNotes.collectAsState()
-    val tabs = listOf("Events", "Requirements", "Notes")
+    val tabs = listOf("Events", "Requirements", "Notes", "Glossary")
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         ScrollableTabRow(
@@ -204,6 +212,7 @@ fun CalendarScreen(vm: CalendarViewModel, onCardClick: (String) -> Unit) {
             0 -> CalendarEventsTab(vm, onCardClick, events, profile)
             1 -> StandingRequirementsTabContent(vm, profile)
             2 -> EventNotesTabContent(vm, notes)
+            3 -> GlossaryTabContent(vm)
         }
     }
 }
@@ -216,6 +225,7 @@ private fun CalendarEventsTab(
     events: List<DashboardCard>,
     profile: UserProfile?,
 ) {
+    val context = LocalContext.current
     val jurisdictionName = CountryRegulatoryContext.forCountry(profile?.country ?: "").jurisdictionName
     val filtered = vm.filteredEvents(events, profile)
     val nicheChips = remember(profile) {
@@ -408,6 +418,8 @@ private fun CalendarEventsTab(
                             card = card,
                             onClick = { onCardClick(card.id) },
                             onPin = { vm.pin(card.id, !card.isPinned) },
+                            onShare = { RegulatoryEventExport.shareText(context, card) },
+                            onAddToCalendar = { RegulatoryEventExport.addToCalendar(context, card) },
                             modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.screenPaddingHorizontal, vertical = 4.dp),
                         )
                     }
@@ -534,6 +546,56 @@ private fun EventNotesTabContent(vm: CalendarViewModel, notes: List<EventUserNot
                             IconButton(onClick = { vm.deleteEventNote(n.id) }, modifier = Modifier.size(40.dp)) {
                                 Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = ErrorRed, modifier = Modifier.size(22.dp))
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlossaryTabContent(vm: CalendarViewModel) {
+    var query by remember { mutableStateOf("") }
+    val terms = remember(query) { RegulatoryGlossary.search(query) }
+    Column(Modifier.fillMaxSize().padding(horizontal = AppDimens.screenPaddingHorizontal)) {
+        Text(
+            vm.regulationConfig.positioningStatement.ifBlank {
+                "Short definitions for common regulatory terms. Not legal advice."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = SecondaryTextMedium,
+            modifier = Modifier.padding(vertical = 8.dp),
+        )
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Search glossary") },
+            singleLine = true,
+        )
+        Spacer(Modifier.height(12.dp))
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = AppDimens.contentBottomInset),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.listItemSpacing),
+        ) {
+            items(terms, key = { it.term }) { t ->
+                Surface(shape = RoundedCornerShape(AppDimens.cardCornerRadius), color = PureWhite) {
+                    Column(Modifier.padding(AppDimens.cardInnerPadding)) {
+                        Text(t.term, fontWeight = FontWeight.Bold, color = PrimaryTextDark)
+                        Text(
+                            t.definition,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SecondaryTextMedium,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                        if (t.relatedTerms.isNotEmpty()) {
+                            Text(
+                                "See also: ${t.relatedTerms.joinToString(", ")}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TertiaryGray,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
                         }
                     }
                 }
