@@ -1,6 +1,6 @@
 # Пакет Desktop `files (2)` — як інтегровано в проєкт
 
-Оригінал: `CURSOR_PROMPT.md` + 16 файлів у пакеті `com.regulation.assistant.*`.
+Оригінал: `CURSOR_PROMPT.md` + дерево `cursor-package` (`com.regulation.assistant.*`). Файли в **корені** `files (2)` — це ті самі `.kt`/`.json`, що й у `cursor-package` (дублікати для зручності; перевірка збігу: `docs/imports/FILES2_FULL_AUDIT.md`).
 
 У цьому репозиторії **не** додано паралельний пакет `com.regulation.assistant`: логіка перенесена в `com.example.myapplication2`, щоб не дублювати `CalendarViewModel`, Room-нотатки та `NicheCatalog`.
 
@@ -12,7 +12,7 @@
 | Батчі ніш + реалістична кількість подій | `RemoteCalendarRepository` — `chunked(maxNichesPerRequest)`, 8–15 подій на батч, пауза 500 ms між батчами |
 | Парсер JSON (3 рівні) | `sanitizeJsonArrayDeep`, `extractTopJsonArray`, `parseJsonArrayLenient` |
 | RegulationConfig з assets | Уже було: `assets/regulation_config.json` + `RegulationConfigLoader` |
-| Глосарій | `core/common/RegulatoryGlossary.kt` (клас лишається в проєкті для повторного використання; вкладка в календарі прибрана) |
+| Глосарій | `core/common/RegulatoryGlossary.kt`; у UI — Tools / Profile / Dashboard (не окрема вкладка лише в календарі) |
 | Експорт / календар / share | `data/calendar/RegulatoryEventExport.kt` — кнопки на картці події |
 | Сповіщення | `notifications/RegulatoryNotificationService.kt` + `RegulatoryNotificationReceiver`, ініціалізація в `RegulationApplication` |
 | Onboarding copy | `presentation/onboarding/OnboardingContent.kt` (тексти для майбутнього UI) |
