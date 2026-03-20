@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="app_background">#EAEFEB</color>
+    <color name="card_background">#E0F2F1</color>
+    <color name="accent_teal_primary">#00897B</color>
+    <color name="accent_teal_bright">#26A69A</color>
+    <color name="tag_teal">#B2DFDB</color>
+    <color name="success_green">#66BB6A</color>
+    <color name="system_nav_bar">#616161</color>
+
+    <style name="Theme.MyApplication2" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:navigationBarColor">@color/system_nav_bar</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+    </style>
+</resources>

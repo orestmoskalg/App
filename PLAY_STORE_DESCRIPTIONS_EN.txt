@@ -1,0 +1,57 @@
+=== SHORT DESCRIPTION (max 80 characters) ===
+
+EU MDR/IVDR calendar. Deadlines, events & search for medical device manufacturers.
+
+
+=== FULL DESCRIPTION (max 4000 characters) ===
+
+MDR/IVDR Assistant is your all‑in‑one regulatory companion for EU Medical Device Regulation (MDR 2017/745) and In Vitro Diagnostic Regulation (IVDR 2017/746). Built for medical device and IVD manufacturers, Regulatory Affairs teams, and compliance professionals, the app helps you never miss a deadline, stay informed about regulatory changes, and streamline your path to market.
+
+WHY MDR/IVDR ASSISTANT?
+
+The transition to EU MDR and IVDR has brought hundreds of new requirements, extended timelines, and complex deadlines. Keeping track of UDI registration, PSUR submissions, EUDAMED updates, NB audits, and certification renewals across multiple product lines can be overwhelming. MDR/IVDR Assistant centralizes your regulatory timeline in one place and delivers personalized, actionable guidance based on your product portfolio and niche.
+
+REGULATORY CALENDAR
+
+• Personalized events generated from your profile: select your niches (e.g., Software as Medical Device, IVD Class B/C, General Devices) and receive a tailored calendar of relevant deadlines for the next 12 months.
+• Coverage of key milestones: UDI registration in EUDAMED, PSUR (Periodic Safety Update Report) submissions, IVDR phase‑in deadlines for Classes B–D, MDCG guidance updates, GSPR cybersecurity requirements, PMCF reporting, clinical evaluation updates, certification body audits, and conformity assessment renewals.
+• Priority tagging: events are marked as Critical, High, Medium, or Low so you can focus on what matters most.
+• Urgent deadlines highlighted: upcoming deadlines within 7 days are prominently displayed with countdown timers.
+• Smart caching: events are stored locally and refreshed once per day to reduce data usage and load times.
+
+SEARCH & REGULATORY INTELLIGENCE
+
+• Ask regulatory questions in natural language and receive concise, relevant answers powered by AI.
+• Research mode: dive deeper into topics with structured sections, expert analysis, risk flags, and action checklists.
+• Every event includes a checklist of recommended actions, risk factors, and links to official resources.
+• Search history is saved so you can quickly revisit previous queries.
+
+KNOWLEDGE BASE
+
+• Compliance strategies: strategic guidance for navigating MDR/IVDR requirements.
+• Learning modules: educational content to build and refresh your regulatory knowledge.
+• Official links: direct references to European Commission, MDCG guidance documents, EUDAMED, and other authoritative sources.
+
+WHO IS THIS FOR?
+
+• Regulatory Affairs (RA) specialists managing multiple product lines and territories.
+• Medical device and IVD manufacturers preparing for or maintaining MDR/IVDR compliance.
+• Quality managers responsible for PMS, PMCF, and technical documentation.
+• Consultants and auditors supporting manufacturers through the transition.
+• Startups and SMEs navigating regulatory requirements for the first time.
+
+Whether you manufacture implantables, IVDs, SaMD, or general medical devices, the app adapts to your regulatory landscape. Events are generated based on your selected niches, so you see only what applies to your business. Pin important events to your dashboard and share them with your team. The calendar supplements your existing project management and QMS tools — use it as your single source of truth for regulatory dates.
+
+GET STARTED
+
+Create your profile with your role, country, and product niches. The app generates a personalized calendar, which you can refresh anytime to add new events. Events are saved and supplemented over time — only new events are fetched on refresh, so your data stays up to date without redundant downloads.
+
+DATA & PRIVACY
+
+Your profile settings and saved events are stored locally on your device. The app uses AI services to generate calendar content and answer queries; only technical parameters (niches, country) are sent for personalization. We do not collect personal data, location, or analytics. API keys are stored locally — keep them secure.
+
+SUPPORT & DISCLAIMER
+
+MDR/IVDR Assistant is designed to complement your existing processes. It does not replace Notified Body communication, legal advice, or official regulatory authorities. Regulations and guidance evolve; always verify critical deadlines with your Notified Body and competent authority. For questions or feedback, contact us through the app listing page.
+
+Download today and take control of your regulatory timeline.
