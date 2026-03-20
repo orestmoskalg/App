@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">MDR/IVDR Assistant</string>
+    <string name="alpha_title">Alpha release</string>
+    <string name="alpha_intro">This app is in early alpha. You may see incomplete features, crashes, and changes without notice. Data and dates shown here may be inaccurate or outdated; accuracy and stability will improve in upcoming releases.</string>
+    <string name="alpha_ai_notice">AI-generated content is not legal or regulatory advice. Always verify against official sources and current regulations.</string>
+    <string name="alpha_checkbox">I understand this is an alpha build: data may be inaccurate, the app may crash, and fixes will ship in future versions</string>
+    <string name="alpha_continue">Continue</string>
 </resources>

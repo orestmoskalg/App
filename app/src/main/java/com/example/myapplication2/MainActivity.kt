@@ -22,6 +22,7 @@ import com.example.myapplication2.di.AppContainer
 import com.example.myapplication2.presentation.navigation.NavIntentViewModel
 import com.example.myapplication2.presentation.navigation.RegulationNavHost
 import com.example.myapplication2.presentation.onboarding.OnboardingScreen
+import com.example.myapplication2.presentation.root.AlphaDisclaimerScreen
 import com.example.myapplication2.presentation.root.AppRootViewModel
 import com.example.myapplication2.presentation.root.AppState
 import com.example.myapplication2.ui.theme.*
@@ -44,6 +45,9 @@ class MainActivity : ComponentActivity() {
                 ) { state ->
                     when (state) {
                         AppState.Loading -> SplashScreen()
+                        AppState.AlphaDisclaimer -> AlphaDisclaimerScreen(
+                            onAccepted = rootVm::acceptAlphaDisclaimer,
+                        )
                         AppState.Onboarding -> OnboardingScreen(
                             initialProfile = rootVm.onboardingInitialProfile,
                             onComplete = rootVm::completeOnboarding,

@@ -56,6 +56,9 @@ interface AppSettingsRepository {
     suspend fun setKnowledgeBaseSeedVersion(version: Int)
     suspend fun isOnboardingCompleted(): Boolean
     suspend fun setOnboardingCompleted(completed: Boolean)
+    /** One-time acknowledgement of alpha / AI disclaimer before onboarding or main. */
+    suspend fun isAlphaDisclaimerAccepted(): Boolean
+    suspend fun setAlphaDisclaimerAccepted(value: Boolean)
     // Checklist persistence
     suspend fun getChecklistStates(): Map<String, Boolean>
     suspend fun saveChecklistStates(states: Map<String, Boolean>)

@@ -2,6 +2,7 @@ package com.example.myapplication2.data.repository
 
 import com.example.myapplication2.core.common.AppJson
 import com.example.myapplication2.core.common.CountryRegulatoryContext
+import com.example.myapplication2.core.common.NichePromptEnrichmentCatalog
 import com.example.myapplication2.core.common.SectorCatalog
 import com.example.myapplication2.core.common.SectorKeys
 import com.example.myapplication2.core.common.SectorRegulatoryContext
@@ -128,10 +129,12 @@ class RemoteSearchRepository(private val api: GrokApi) : ResearchRepository {
         val sectorKey = SectorRegulatoryContext.sectorKeyOrDefault(p)
         val sectorLabel = SectorCatalog.labelOrKey(sectorKey)
         val docLine = if (sectorKey == SectorKeys.MEDICAL_DEVICES) ctx.documentExamples else "use instruments appropriate to $sectorLabel (not MDR/IVDR unless sector is medical devices)"
+        val nicheDeep = NichePromptEnrichmentCatalog.promptBlockForProfile(p)
         return """
 MANDATORY SCOPE:
 - Country / jurisdiction: ${ctx.jurisdictionName} ONLY. Regulatory references must fit this jurisdiction and sector: $sectorLabel ($docLine).
 - User niches: $nichesList. Tailor the answer to these focus tags within the sector. Key findings, action plan and affectedNiches must relate to these niches.
+$nicheDeep
 
 QUERY: "$query"
 USER: role="${p.role}", sector="$sectorLabel", niches="$nichesList", country="${p.country}"

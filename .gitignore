@@ -19,6 +19,9 @@ secrets.properties.copy
 .cxx
 local.properties
 
+# Debug session NDJSON (agent instrumentation)
+debug-*.log
+
 # Вихідні збірки
 *.apk
 *.aab

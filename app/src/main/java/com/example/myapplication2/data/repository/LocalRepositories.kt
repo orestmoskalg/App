@@ -133,6 +133,7 @@ class AppSettingsRepositoryImpl(private val context: Context) : AppSettingsRepos
     private val knowledgeSeededKey   = booleanPreferencesKey("knowledge_base_seeded")
     private val knowledgeSeedVersionKey = intPreferencesKey("knowledge_seed_version")
     private val onboardingKey      = booleanPreferencesKey("onboarding_completed")
+    private val alphaDisclaimerKey = booleanPreferencesKey("alpha_disclaimer_accepted")
     private val checklistKey       = stringPreferencesKey("checklist_states")
     private val notifEnabledKey    = booleanPreferencesKey("notif_enabled")
     private val deadlineAlertsKey  = booleanPreferencesKey("notif_deadlines")
@@ -203,6 +204,13 @@ class AppSettingsRepositoryImpl(private val context: Context) : AppSettingsRepos
     override suspend fun isOnboardingCompleted(): Boolean = readPref(onboardingKey, false)
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         writePref(onboardingKey, completed)
+    }
+
+    override suspend fun isAlphaDisclaimerAccepted(): Boolean =
+        readPref(alphaDisclaimerKey, false)
+
+    override suspend fun setAlphaDisclaimerAccepted(value: Boolean) {
+        writePref(alphaDisclaimerKey, value)
     }
 
     // ── Checklist persistence ─────────────────────────────────────────────────

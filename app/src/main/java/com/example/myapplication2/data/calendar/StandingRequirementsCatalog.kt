@@ -102,7 +102,7 @@ object StandingRequirementsCatalog {
         StandingRequirement(
             id = "csrd_quarterly",
             title = "CSRD / ESRS data collection",
-            obligation = "Companies subject to CSRD must collect sustainability data throughout the year for accurate annual ESRS disclosure.",
+            obligation = "Companies subject to CSRD must collect sustainability data throughout the year for accurate annual ESRS disclosure, including double materiality (impact and financial) where ESRS requires it.",
             timeframe = "Quarterly data collection; annual reporting",
             legalBasis = "CSRD 2022/2464, ESRS",
             nicheID = "esg_sustainability",
@@ -132,6 +132,74 @@ object StandingRequirementsCatalog {
             ),
             sourceURL = "https://echa.europa.eu/safety-data-sheets",
             urgency = StandingRequirement.Urgency.Triggered,
+        ),
+        StandingRequirement(
+            id = "gdpr_dpia",
+            title = "Data Protection Impact Assessment (DPIA)",
+            obligation = "Where processing is likely to result in a high risk to individuals, the controller must carry out an assessment of the impact of the envisaged processing operations on the protection of personal data.",
+            timeframe = "Before high-risk processing begins; review when change in risk",
+            legalBasis = "GDPR Article 35",
+            nicheID = "gdpr_ccpa_privacy",
+            nicheCategory = "Digital",
+            jurisdictions = listOf("EU", "UK"),
+            authority = "Lead Supervisory Authority",
+            practicalSteps = listOf(
+                "Identify processing that requires a DPIA (WP248 criteria, EDPB lists)",
+                "Document necessity, proportionality, measures, residual risk",
+            ),
+            sourceURL = "https://gdpr-info.eu/art-35-gdpr/",
+            urgency = StandingRequirement.Urgency.Continuous,
+        ),
+        StandingRequirement(
+            id = "nis2_management_body",
+            title = "NIS2 management-body accountability",
+            obligation = "Management bodies must approve cybersecurity risk-management measures and can be held liable for infringements of national provisions transposing NIS2 obligations.",
+            timeframe = "Ongoing governance; evidence at supervisory inspections",
+            legalBasis = "NIS2 Directive Article 20",
+            nicheID = "cybersecurity_nis2",
+            nicheCategory = "Digital",
+            jurisdictions = listOf("EU"),
+            authority = "National competent authority",
+            practicalSteps = listOf(
+                "Ensure board-level approval of cybersecurity policies and risk treatment",
+                "Keep records of decisions and accountability assignments",
+            ),
+            sourceURL = "https://eur-lex.europa.eu/eli/dir/2022/2555/oj",
+            urgency = StandingRequirement.Urgency.Continuous,
+        ),
+        StandingRequirement(
+            id = "sanctions_screening",
+            title = "Sanctions & export screening",
+            obligation = "Screen customers, counterparties, and transactions against applicable sanctions and export-control lists; block or escalate matches per policy.",
+            timeframe = "Continuous — on onboarding and material changes",
+            legalBasis = "EU sanctions regimes; dual-use Regulation 2021/821; national implementations",
+            nicheID = "sanctions_export",
+            nicheCategory = "Legal",
+            jurisdictions = listOf("EU", "UK", "US"),
+            authority = "Competent national authorities / OFAC / OFSI",
+            practicalSteps = listOf(
+                "Automate list screening with audit trail",
+                "Define escalation for potential matches",
+            ),
+            sourceURL = "https://www.sanctionsmap.eu/",
+            urgency = StandingRequirement.Urgency.Continuous,
+        ),
+        StandingRequirement(
+            id = "haccp_ccp_monitoring",
+            title = "HACCP critical control points",
+            obligation = "Establish and monitor critical control points (CCPs) with defined limits, corrective actions, and verification for food safety hazards.",
+            timeframe = "Continuous during operations",
+            legalBasis = "Codex Alimentarius HACCP; EU food hygiene (e.g. 852/2004) national rules",
+            nicheID = "food_safety_haccp",
+            nicheCategory = "Food",
+            jurisdictions = listOf("EU", "UK", "US"),
+            authority = "Food business operator / competent authority",
+            practicalSteps = listOf(
+                "Validate CCP limits and monitoring frequency",
+                "Record deviations and corrective actions",
+            ),
+            sourceURL = "https://www.fao.org/fao-who-codexalimentarius/",
+            urgency = StandingRequirement.Urgency.Continuous,
         ),
     )
 
@@ -180,6 +248,8 @@ object StandingRequirementsCatalog {
             "esg_sustainability" ->
                 sectorKey == SectorKeys.ENVIRONMENT || sectorKey == SectorKeys.OTHER
             "chemicals_regulation" -> sectorKey == SectorKeys.CHEMICALS
+            "sanctions_export" -> sectorKey == SectorKeys.OTHER
+            "food_safety_haccp" -> sectorKey == SectorKeys.FOOD_FEED
             else -> false
         }
     }
@@ -232,6 +302,16 @@ object StandingRequirementsCatalog {
                     pkLower.startsWith("chem_") || pkLower.contains("reach") ||
                     pkLower.contains("clp") || pkLower.contains("sds") ||
                     pkLower.contains("biocide") || pkLower.contains("pesticide")
+
+            "sanctions_export" ->
+                pk == "other_trade_sanctions" ||
+                    pk == "other_export_dual_use" ||
+                    pkLower.contains("sanction") || pkLower.contains("dual") ||
+                    pkLower.contains("export control")
+
+            "food_safety_haccp" ->
+                sectorOfNiche == SectorKeys.FOOD_FEED ||
+                    pkLower.startsWith("food_") || pkLower.startsWith("feed_")
 
             else -> false
         }
