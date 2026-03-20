@@ -1,5 +1,7 @@
 package com.example.myapplication2.core.common
 
+// Term list aligned with Desktop `files (2)/cursor-package/.../RegulatoryGlossary.kt` (V2).
+
 data class GlossaryTerm(
     val term: String,
     val definition: String,

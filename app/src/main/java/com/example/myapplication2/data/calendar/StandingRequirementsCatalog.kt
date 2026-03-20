@@ -102,7 +102,7 @@ object StandingRequirementsCatalog {
         StandingRequirement(
             id = "csrd_quarterly",
             title = "CSRD / ESRS data collection",
-            obligation = "Companies subject to CSRD must collect sustainability data throughout the year for accurate annual ESRS disclosure, including double materiality (impact and financial) where ESRS requires it.",
+            obligation = "Companies subject to CSRD must collect sustainability data throughout the year for accurate annual ESRS disclosure.",
             timeframe = "Quarterly data collection; annual reporting",
             legalBasis = "CSRD 2022/2464, ESRS",
             nicheID = "esg_sustainability",
@@ -115,6 +115,25 @@ object StandingRequirementsCatalog {
             ),
             sourceURL = "https://eur-lex.europa.eu/eli/dir/2022/2464/oj",
             urgency = StandingRequirement.Urgency.Periodic,
+        ),
+        StandingRequirement(
+            id = "csrd_double_materiality",
+            title = "CSRD: Double materiality assessment",
+            obligation = "Companies in scope of CSRD must conduct a double materiality assessment to identify sustainability topics that are (1) material to the company's financial performance and (2) where the company has material impacts on people and environment. This assessment drives ESRS disclosure requirements.",
+            timeframe = "Ongoing; review when business model or reporting scope changes",
+            legalBasis = "CSRD 2022/2464, ESRS (materiality)",
+            nicheID = "esg_sustainability",
+            nicheCategory = "Legal",
+            jurisdictions = listOf("EU"),
+            authority = "National transposing authority",
+            practicalSteps = listOf(
+                "Conduct stakeholder engagement for materiality",
+                "Assess both impact materiality and financial materiality",
+                "Document materiality methodology",
+                "Review annually and when business model changes",
+            ),
+            sourceURL = "https://eur-lex.europa.eu/eli/dir/2022/2464/oj",
+            urgency = StandingRequirement.Urgency.Continuous,
         ),
         StandingRequirement(
             id = "reach_sds_update",
@@ -135,8 +154,8 @@ object StandingRequirementsCatalog {
         ),
         StandingRequirement(
             id = "gdpr_dpia",
-            title = "Data Protection Impact Assessment (DPIA)",
-            obligation = "Where processing is likely to result in a high risk to individuals, the controller must carry out an assessment of the impact of the envisaged processing operations on the protection of personal data.",
+            title = "GDPR: DPIA required for high-risk processing",
+            obligation = "A Data Protection Impact Assessment must be conducted before processing likely to result in high risk to individuals. This includes systematic monitoring, large-scale special categories, or automated decision-making with legal effects.",
             timeframe = "Before high-risk processing begins; review when change in risk",
             legalBasis = "GDPR Article 35",
             nicheID = "gdpr_ccpa_privacy",
@@ -152,8 +171,8 @@ object StandingRequirementsCatalog {
         ),
         StandingRequirement(
             id = "nis2_management_body",
-            title = "NIS2 management-body accountability",
-            obligation = "Management bodies must approve cybersecurity risk-management measures and can be held liable for infringements of national provisions transposing NIS2 obligations.",
+            title = "NIS2: Management body personal liability",
+            obligation = "Members of management bodies of essential and important entities can be held personally liable for non-compliance with cybersecurity risk management obligations. Management must approve and oversee cybersecurity measures and undergo regular training.",
             timeframe = "Ongoing governance; evidence at supervisory inspections",
             legalBasis = "NIS2 Directive Article 20",
             nicheID = "cybersecurity_nis2",
@@ -161,16 +180,17 @@ object StandingRequirementsCatalog {
             jurisdictions = listOf("EU"),
             authority = "National competent authority",
             practicalSteps = listOf(
-                "Ensure board-level approval of cybersecurity policies and risk treatment",
-                "Keep records of decisions and accountability assignments",
+                "Board-level cybersecurity training annually",
+                "Document management approval of cyber measures",
+                "Ensure D&O insurance covers NIS2 liability where applicable",
             ),
             sourceURL = "https://eur-lex.europa.eu/eli/dir/2022/2555/oj",
             urgency = StandingRequirement.Urgency.Continuous,
         ),
         StandingRequirement(
             id = "sanctions_screening",
-            title = "Sanctions & export screening",
-            obligation = "Screen customers, counterparties, and transactions against applicable sanctions and export-control lists; block or escalate matches per policy.",
+            title = "Sanctions: Continuous customer and transaction screening",
+            obligation = "Financial institutions and obliged entities must screen customers and transactions against applicable sanctions lists (EU, OFAC SDN, UK OFSI, UN) on an ongoing basis. Reflect new designations without undue delay.",
             timeframe = "Continuous — on onboarding and material changes",
             legalBasis = "EU sanctions regimes; dual-use Regulation 2021/821; national implementations",
             nicheID = "sanctions_export",
@@ -178,16 +198,18 @@ object StandingRequirementsCatalog {
             jurisdictions = listOf("EU", "UK", "US"),
             authority = "Competent national authorities / OFAC / OFSI",
             practicalSteps = listOf(
-                "Automate list screening with audit trail",
-                "Define escalation for potential matches",
+                "Automate sanctions list update ingestion where possible",
+                "Screen at onboarding, per-transaction, and on list updates",
+                "Document false positive resolution",
+                "Test screening effectiveness periodically",
             ),
             sourceURL = "https://www.sanctionsmap.eu/",
             urgency = StandingRequirement.Urgency.Continuous,
         ),
         StandingRequirement(
             id = "haccp_ccp_monitoring",
-            title = "HACCP critical control points",
-            obligation = "Establish and monitor critical control points (CCPs) with defined limits, corrective actions, and verification for food safety hazards.",
+            title = "HACCP: Continuous monitoring at critical control points",
+            obligation = "Food business operators must identify Critical Control Points (CCPs) and continuously monitor them. Critical limits must be established, monitored, and corrective actions taken immediately when limits are exceeded. Records must be maintained.",
             timeframe = "Continuous during operations",
             legalBasis = "Codex Alimentarius HACCP; EU food hygiene (e.g. 852/2004) national rules",
             nicheID = "food_safety_haccp",
@@ -195,8 +217,11 @@ object StandingRequirementsCatalog {
             jurisdictions = listOf("EU", "UK", "US"),
             authority = "Food business operator / competent authority",
             practicalSteps = listOf(
-                "Validate CCP limits and monitoring frequency",
-                "Record deviations and corrective actions",
+                "Identify all CCPs in the production process",
+                "Set critical limits for each CCP",
+                "Establish monitoring procedures and frequency",
+                "Define corrective actions for deviations",
+                "Maintain monitoring records for audit",
             ),
             sourceURL = "https://www.fao.org/fao-who-codexalimentarius/",
             urgency = StandingRequirement.Urgency.Continuous,
@@ -245,7 +270,7 @@ object StandingRequirementsCatalog {
             "medtech_mdr_ivdr" -> sectorKey == SectorKeys.MEDICAL_DEVICES
             "cybersecurity_nis2", "gdpr_ccpa_privacy" -> sectorKey == SectorKeys.DIGITAL_PRIVACY
             "fintech_banking" -> false
-            "esg_sustainability" ->
+            "esg_sustainability", "csrd_double_materiality" ->
                 sectorKey == SectorKeys.ENVIRONMENT || sectorKey == SectorKeys.OTHER
             "chemicals_regulation" -> sectorKey == SectorKeys.CHEMICALS
             "sanctions_export" -> sectorKey == SectorKeys.OTHER
@@ -289,7 +314,7 @@ object StandingRequirementsCatalog {
                 pkLower.contains("psd") || pkLower.contains("bank") || pkLower.contains("payment") ||
                     pkLower.contains("mica") || pkLower.contains("crypto") || pkLower.contains("fintech")
 
-            "esg_sustainability" ->
+            "esg_sustainability", "csrd_double_materiality" ->
                 sectorOfNiche == SectorKeys.ENVIRONMENT ||
                     pkLower.contains("csrd") || pkLower.contains("esg") ||
                     pkLower.contains("carbon") || pkLower.contains("waste") ||

@@ -40,8 +40,8 @@ android {
         applicationId = "com.orest.regulation"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "2.2"
+        versionCode = 8
+        versionName = "2.2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "GROK_API_KEY", "\"$grokApiKey\"")
