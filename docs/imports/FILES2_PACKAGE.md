@@ -12,7 +12,7 @@
 | Батчі ніш + реалістична кількість подій | `RemoteCalendarRepository` — `chunked(maxNichesPerRequest)`, 8–15 подій на батч, пауза 500 ms між батчами |
 | Парсер JSON (3 рівні) | `sanitizeJsonArrayDeep`, `extractTopJsonArray`, `parseJsonArrayLenient` |
 | RegulationConfig з assets | Уже було: `assets/regulation_config.json` + `RegulationConfigLoader` |
-| Глосарій | `core/common/RegulatoryGlossary.kt` + вкладка **Glossary** у календарі |
+| Глосарій | `core/common/RegulatoryGlossary.kt` (клас лишається в проєкті для повторного використання; вкладка в календарі прибрана) |
 | Експорт / календар / share | `data/calendar/RegulatoryEventExport.kt` — кнопки на картці події |
 | Сповіщення | `notifications/RegulatoryNotificationService.kt` + `RegulatoryNotificationReceiver`, ініціалізація в `RegulationApplication` |
 | Onboarding copy | `presentation/onboarding/OnboardingContent.kt` (тексти для майбутнього UI) |
